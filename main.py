@@ -1,7 +1,6 @@
 from certmonitor import CertMonitor
 import json
 
-
 # Example usage
 if __name__ == "__main__":
     # Test with a hostname
@@ -62,10 +61,10 @@ if __name__ == "__main__":
     # Fetch and print structured certificate details
     structured_cert = monitor.get_cert_info()
     print("Structured Certificate:")
-    print(structured_cert)
+    print(json.dumps(structured_cert, indent=2))
 
     # Validate the certificate with additional arguments for validators
     validator_args = {"subject_alt_names": ["example.com", "www.example.com"]}
     validation_results = monitor.validate(validator_args)
     print("Validation Results:")
-    print(validation_results)
+    print(json.dumps(validation_results, indent=2))
