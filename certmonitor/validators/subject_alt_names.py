@@ -2,9 +2,29 @@ from .base import BaseValidator
 
 
 class SubjectAltNamesValidator(BaseValidator):
+    """
+    A validator for checking the Subject Alternative Names (SANs) in an SSL certificate.
+
+    Attributes:
+        name (str): The name of the validator.
+    """
+
     name = "subject_alt_names"
 
     def validate(self, cert, host, port, alternate_name=None):
+        """
+        Validates the SANs in the provided SSL certificate.
+
+        Args:
+            cert (dict): The SSL certificate.
+            host (str): The hostname to validate against the SANs.
+            port (int): The port number.
+            alternate_name (str, optional): An alternate name to validate against the SANs.
+
+        Returns:
+            dict: A dictionary containing the validation results, including whether the SANs are valid,
+                  the SANs themselves, the count of SANs, and any warnings or reasons for validation failure.
+        """
         if "subjectAltName" not in cert:
             return {
                 "is_valid": False,
@@ -70,6 +90,17 @@ class SubjectAltNamesValidator(BaseValidator):
         return result
 
     def _check_name_in_sans_with_reason(self, name, sans):
+        """
+        Checks if the given name is present in the SANs and provides a reason.
+
+        Args:
+            name (str): The name to check.
+            sans (list): The list of SANs.
+
+        Returns:
+            tuple: A tuple containing a boolean indicating if the name is present in the SANs,
+                   and a reason string.
+        """
         if name in sans:
             return True, f"Exact match for {name} found in SANs"
         for san in sans:
@@ -78,6 +109,16 @@ class SubjectAltNamesValidator(BaseValidator):
         return False, f"No match found for {name} in SANs"
 
     def _matches_wildcard(self, hostname, pattern):
+        """
+        Checks if the given hostname matches a wildcard pattern.
+
+        Args:
+            hostname (str): The hostname to check.
+            pattern (str): The wildcard pattern to match against.
+
+        Returns:
+            bool: True if the hostname matches the wildcard pattern, False otherwise.
+        """
         if not pattern.startswith("*."):
             return False
 

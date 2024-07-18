@@ -2,9 +2,28 @@ from .base import BaseValidator
 
 
 class HostnameValidator(BaseValidator):
+    """
+    A validator for checking the hostname in an SSL certificate.
+
+    Attributes:
+        name (str): The name of the validator.
+    """
+
     name = "hostname"
 
     def validate(self, cert, host, port):
+        """
+        Validates the hostname against the Subject Alternative Names (SANs) in the provided SSL certificate.
+
+        Args:
+            cert (dict): The SSL certificate.
+            host (str): The hostname to validate.
+            port (int): The port number.
+
+        Returns:
+            dict: A dictionary containing the validation results, including whether the hostname is valid,
+                  the reason for validation failure, and the alternative names (SANs) in the certificate.
+        """
         if "subjectAltName" not in cert:
             return {
                 "is_valid": False,
@@ -44,9 +63,29 @@ class HostnameValidator(BaseValidator):
         }
 
     def _matches_hostname(self, hostname, cert_names):
+        """
+        Checks if the hostname matches any of the provided certificate names.
+
+        Args:
+            hostname (str): The hostname to check.
+            cert_names (list): The list of certificate names.
+
+        Returns:
+            bool: True if the hostname matches any of the certificate names, False otherwise.
+        """
         return hostname.lower() in (name.lower() for name in cert_names)
 
     def _matches_wildcard(self, hostname, pattern):
+        """
+        Checks if the hostname matches a wildcard pattern.
+
+        Args:
+            hostname (str): The hostname to check.
+            pattern (str): The wildcard pattern to match against.
+
+        Returns:
+            bool: True if the hostname matches the wildcard pattern, False otherwise.
+        """
         if not pattern.startswith("*."):
             return False
 
