@@ -23,7 +23,7 @@ class ExpirationValidator(BaseValidator):
 
         Returns:
             dict: A dictionary containing the validation results, including whether the certificate is valid,
-                  the number of days until expiry, and the expiration date.
+                  the number of days until expiry, the expiration date, and any warnings.
         """
         now = datetime.datetime.utcnow()
         not_after = datetime.datetime.strptime(
@@ -33,8 +33,19 @@ class ExpirationValidator(BaseValidator):
         is_valid = now < not_after
         days_to_expiry = (not_after - now).days
 
+        warnings = []
+        if days_to_expiry < 7:
+            warnings.append(
+                f"Certificate is expiring in less than 1 week ({days_to_expiry} days)"
+            )
+        if days_to_expiry > 398:
+            warnings.append(
+                f"Certificate is valid for more than industry standard (398 days) / ({days_to_expiry} days)"
+            )
+
         return {
             "is_valid": is_valid,
             "days_to_expiry": days_to_expiry,
             "expires_on": not_after.isoformat(),
+            "warnings": warnings,
         }
