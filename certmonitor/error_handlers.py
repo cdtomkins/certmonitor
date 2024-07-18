@@ -1,41 +1,24 @@
-def handle_ssl_error(e, original_hostname, hostname, ip, port):
-    return {
-        "error": "SSLError",
-        "message": str(e),
-        "original_hostname": original_hostname,
-        "hostname": hostname,
-        "ip": ip,
-        "port": port,
-    }
+class ErrorHandler:
+    """
+    Class for handling errors in a flexible manner.
+    """
 
+    def handle_error(self, error_type, message, host, port):
+        """
+        Handles errors encountered during certificate retrieval.
 
-def handle_socket_error(e, original_hostname, hostname, ip, port):
-    return {
-        "error": "SocketError",
-        "message": str(e),
-        "original_hostname": original_hostname,
-        "hostname": hostname,
-        "ip": ip,
-        "port": port,
-    }
+        Args:
+            error_type (str): The type of error.
+            message (str): The error message.
+            host (str): The host where the error occurred.
+            port (int): The port where the error occurred.
 
-
-def handle_unknown_error(e, original_hostname, hostname, ip, port):
-    return {
-        "error": "UnknownError",
-        "message": str(e),
-        "original_hostname": original_hostname,
-        "hostname": hostname,
-        "ip": ip,
-        "port": port,
-    }
-
-
-def handle_dns_error(original_hostname, hostname, port):
-    return {
-        "error": "DNSResolutionError",
-        "message": f"Unable to resolve hostname: {hostname}",
-        "original_hostname": original_hostname,
-        "hostname": hostname,
-        "port": port,
-    }
+        Returns:
+            dict: A dictionary containing the error details.
+        """
+        return {
+            "error": error_type,
+            "message": message,
+            "host": host,
+            "port": port,
+        }

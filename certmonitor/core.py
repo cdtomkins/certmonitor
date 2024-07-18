@@ -6,6 +6,7 @@ import os
 
 from certmonitor import config
 from certmonitor.validators import get_validators
+from certmonitor.error_handlers import ErrorHandler
 
 
 class CertMonitor:
@@ -35,6 +36,7 @@ class CertMonitor:
         self.cert_info = None
         self.validators = get_validators()
         self.enabled_validators = enabled_validators or config.ENABLED_VALIDATORS
+        self.error_handler = ErrorHandler()
 
     def validate(self, validator_args=None):
         """
@@ -111,11 +113,17 @@ class CertMonitor:
                     self.pem = ssl.DER_cert_to_PEM_cert(self.der)
                     return ssock.getpeercert()
         except ssl.SSLError as e:
-            return self._handle_error("SSLError", str(e))
+            return self.error_handler.handle_error(
+                "SSLError", str(e), self.host, self.port
+            )
         except socket.error as e:
-            return self._handle_error("SocketError", str(e))
+            return self.error_handler.handle_error(
+                "SocketError", str(e), self.host, self.port
+            )
         except Exception as e:
-            return self._handle_error("UnknownError", str(e))
+            return self.error_handler.handle_error(
+                "UnknownError", str(e), self.host, self.port
+            )
 
     def _fetch_cert_by_ip(self):
         """
@@ -134,29 +142,17 @@ class CertMonitor:
                     self.pem = ssl.DER_cert_to_PEM_cert(self.der)
                     return self._parse_pem_cert(self.pem)
         except ssl.SSLError as e:
-            return self._handle_error("SSLError", str(e))
+            return self.error_handler.handle_error(
+                "SSLError", str(e), self.host, self.port
+            )
         except socket.error as e:
-            return self._handle_error("SocketError", str(e))
+            return self.error_handler.handle_error(
+                "SocketError", str(e), self.host, self.port
+            )
         except Exception as e:
-            return self._handle_error("UnknownError", str(e))
-
-    def _handle_error(self, error_type, message):
-        """
-        Handles errors encountered during certificate retrieval.
-
-        Args:
-            error_type (str): The type of error.
-            message (str): The error message.
-
-        Returns:
-            dict: A dictionary containing the error details.
-        """
-        return {
-            "error": error_type,
-            "message": message,
-            "host": self.host,
-            "port": self.port,
-        }
+            return self.error_handler.handle_error(
+                "UnknownError", str(e), self.host, self.port
+            )
 
     def to_dict_hostname(self, data):
         """
@@ -257,56 +253,6 @@ class CertMonitor:
             os.remove(temp_file_path)
 
         return cert_details
-
-    # def _extract_public_key_info(self):
-    #     """
-    #     Extracts basic public key information from the certificate.
-
-    #     Returns:
-    #         dict: A dictionary containing public key information.
-    #     """
-    #     if not self.der:
-    #         return None
-
-    #     try:
-    #         # Find the subject public key info section
-    #         spki_start = self.der.find(b"\x30\x82")  # Start of the SubjectPublicKeyInfo
-    #         if spki_start == -1:
-    #             return None
-
-    #         # Extract the algorithm identifier
-    #         alg_oid_start = spki_start + 15  # Typical offset to algorithm OID
-    #         alg_oid = self.der[
-    #             alg_oid_start : alg_oid_start + 9
-    #         ]  # 9 bytes for RSA or EC OID
-
-    #         key_info = {}
-
-    #         if alg_oid == b"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01":  # RSA OID
-    #             key_info["algorithm"] = "RSA"
-    #             # Find the modulus (which gives us the key size)
-    #             mod_start = self.der.find(b"\x02\x82", spki_start)  # Start of modulus
-    #             if mod_start != -1:
-    #                 mod_length = struct.unpack(
-    #                     ">H", self.der[mod_start + 2 : mod_start + 4]
-    #                 )[0]
-    #                 key_info["size"] = mod_length * 8  # Convert bytes to bits
-    #         elif alg_oid.startswith(b"\x2a\x86\x48\xce\x3d\x02\x01"):  # EC OID
-    #             key_info["algorithm"] = "EC"
-    #             # Try to determine the curve
-    #             curve_oid = self.der[alg_oid_start + 9 : alg_oid_start + 15]
-    #             curves = {
-    #                 b"\x2a\x86\x48\xce\x3d\x03\x01\x07": "secp256r1",
-    #                 b"\x2b\x81\x04\x00\x22": "secp384r1",
-    #                 b"\x2b\x81\x04\x00\x23": "secp521r1",
-    #             }
-    #             key_info["curve"] = curves.get(curve_oid, "unknown")
-
-    #         return key_info
-
-    #     except Exception as e:
-    #         print(f"Error extracting public key info: {str(e)}")
-    #         return None
 
     def get_cert_info(self):
         """
