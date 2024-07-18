@@ -11,7 +11,7 @@ class SubjectAltNamesValidator(BaseValidator):
 
     name = "subject_alt_names"
 
-    def validate(self, cert, host, port, alternate_name=None):
+    def validate(self, cert, host, port, alternate_names=None):
         """
         Validates the SANs in the provided SSL certificate.
 
@@ -19,7 +19,7 @@ class SubjectAltNamesValidator(BaseValidator):
             cert (dict): The SSL certificate.
             host (str): The hostname to validate against the SANs.
             port (int): The port number.
-            alternate_name (str, optional): An alternate name to validate against the SANs.
+            alternate_names (list, optional): A list of alternate names to validate against the SANs.
 
         Returns:
             dict: A dictionary containing the validation results, including whether the SANs are valid,
@@ -48,7 +48,7 @@ class SubjectAltNamesValidator(BaseValidator):
             "sans": {"DNS": dns_sans},
             "count": len(dns_sans),
             "contains_host": False,
-            "contains_alternate": None,
+            "contains_alternate": {},
             "warnings": [],
         }
 
@@ -57,16 +57,16 @@ class SubjectAltNamesValidator(BaseValidator):
             host, dns_sans
         )
 
-        # Check for alternate name if provided
-        if alternate_name:
-            alt_is_valid, alt_reason = self._check_name_in_sans_with_reason(
-                alternate_name, dns_sans
-            )
-            result["contains_alternate"] = {
-                "is_valid": alt_is_valid,
-                "checked_name": alternate_name,
-                "reason": alt_reason,
-            }
+        # Check for alternate names if provided
+        if alternate_names:
+            for alternate_name in alternate_names:
+                alt_is_valid, alt_reason = self._check_name_in_sans_with_reason(
+                    alternate_name, dns_sans
+                )
+                result["contains_alternate"][alternate_name] = {
+                    "is_valid": alt_is_valid,
+                    "reason": alt_reason,
+                }
 
         # Additional checks and warnings
         if not dns_sans:
@@ -82,10 +82,11 @@ class SubjectAltNamesValidator(BaseValidator):
                 f"The hostname {host} is not included in the SANs: {host_reason}"
             )
 
-        if alternate_name and not result["contains_alternate"]["is_valid"]:
-            result["warnings"].append(
-                f"The alternate name {alternate_name} is not included in the SANs: {alt_reason}"
-            )
+        for alternate_name, alt_result in result["contains_alternate"].items():
+            if not alt_result["is_valid"]:
+                result["warnings"].append(
+                    f"The alternate name {alternate_name} is not included in the SANs: {alt_result['reason']}"
+                )
 
         return result
 

@@ -13,7 +13,12 @@ class CertMonitor:
     Class for monitoring and retrieving SSL certificate details from a given host.
     """
 
-    def __init__(self, host, port: int = 443, enabled_validators=None):
+    def __init__(
+        self,
+        host,
+        port: int = 443,
+        enabled_validators: list = config.DEFAULT_VALIDATORS,
+    ):
         """
         Initializes the CertMonitor with the specified host and port.
 
@@ -52,7 +57,12 @@ class CertMonitor:
             if validator.name in self.enabled_validators:
                 args = [self.cert_info, self.host, self.port]
                 if validator_args and validator.name in validator_args:
-                    args.extend(validator_args[validator.name])
+                    if validator.name == "subject_alt_names":
+                        args.append(
+                            validator_args[validator.name]
+                        )  # Pass the list directly
+                    else:
+                        args.extend(validator_args[validator.name])
                 results[validator.name] = validator.validate(*args)
         return results
 
@@ -298,7 +308,7 @@ class CertMonitor:
     #         print(f"Error extracting public key info: {str(e)}")
     #         return None
 
-    def get_structured_cert(self):
+    def get_cert_info(self):
         """
         Retrieves and structures the SSL certificate details.
 
