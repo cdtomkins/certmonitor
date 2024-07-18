@@ -13,7 +13,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 50 + "\n")
 
     # Test with an IPv4 address
-    monitor = CertMonitor("142.250.80.46")  # IPv4 for example.com
+    monitor = CertMonitor("20.76.201.171")  # IPv4 for example.com
     structured_cert = monitor.get_structured_cert()
     print("IPv4 test:")
     print(json.dumps(structured_cert, indent=2))
@@ -25,7 +25,3 @@ if __name__ == "__main__":
     structured_cert = monitor.get_structured_cert()
     print("IPv6 test:")
     print(json.dumps(structured_cert, indent=2))
-    raw_der = monitor.get_raw_der()
-    raw_pem = monitor.get_raw_pem()
-    print("Raw DER:", raw_der)
-    print("Raw PEM:", raw_pem)
