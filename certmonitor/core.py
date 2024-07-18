@@ -1,7 +1,6 @@
 import socket
 import ssl
 import ipaddress
-import json
 import tempfile
 import os
 
@@ -15,8 +14,9 @@ class CertMonitor:
         """
         Initializes the CertMonitor with the specified host and port.
 
-        :param host: The hostname or IP address to retrieve the certificate from.
-        :param port: The port to use for the SSL connection (default is 443).
+        Args:
+            host (str): The hostname or IP address to retrieve the certificate from.
+            port (int, optional): The port to use for the SSL connection. Defaults to 443.
         """
         self.host = host
         self.port = port
@@ -28,8 +28,11 @@ class CertMonitor:
         """
         Checks if the provided host is an IP address.
 
-        :param host: The hostname or IP address to check.
-        :return: True if the host is an IP address, False otherwise.
+        Args:
+            host (str): The hostname or IP address to check.
+
+        Returns:
+            bool: True if the host is an IP address, False otherwise.
         """
         try:
             ipaddress.ip_address(host)
@@ -41,7 +44,8 @@ class CertMonitor:
         """
         Fetches the SSL certificate details based on whether the host is an IP address or a hostname.
 
-        :return: The certificate details or an error message.
+        Returns:
+            dict: The certificate details or an error message.
         """
         if self.is_ip:
             cert = self._fetch_cert_by_ip()
@@ -54,7 +58,8 @@ class CertMonitor:
         """
         Fetches the SSL certificate details using the hostname.
 
-        :return: The certificate details or an error message.
+        Returns:
+            dict: The certificate details or an error message.
         """
         context = ssl.create_default_context()
         try:
@@ -74,7 +79,8 @@ class CertMonitor:
         """
         Fetches the SSL certificate details using the IP address.
 
-        :return: The certificate details or an error message.
+        Returns:
+            dict: The certificate details or an error message.
         """
         context = ssl.create_default_context()
         context.check_hostname = False
@@ -96,9 +102,12 @@ class CertMonitor:
         """
         Handles errors encountered during certificate retrieval.
 
-        :param error_type: The type of error.
-        :param message: The error message.
-        :return: A dictionary containing the error details.
+        Args:
+            error_type (str): The type of error.
+            message (str): The error message.
+
+        Returns:
+            dict: A dictionary containing the error details.
         """
         return {
             "error": error_type,
@@ -108,6 +117,16 @@ class CertMonitor:
         }
 
     def to_dict_hostname(self, data):
+        """
+        Converts the certificate data obtained via hostname into a structured dictionary format.
+
+        Args:
+            data (dict): The certificate data.
+
+        Returns:
+            dict: A dictionary containing the structured certificate data.
+        """
+
         def _handle_duplicate_keys(data):
             result = {}
             for key, value in data:
@@ -140,8 +159,11 @@ class CertMonitor:
         """
         Converts the certificate data obtained via IP address into a structured dictionary format.
 
-        :param data: The certificate data.
-        :return: A dictionary containing the structured certificate data.
+        Args:
+            data (dict): The certificate data.
+
+        Returns:
+            dict: A dictionary containing the structured certificate data.
         """
 
         def _handle_duplicate_keys(data):
@@ -176,8 +198,11 @@ class CertMonitor:
         """
         Parses a PEM formatted certificate to extract relevant details.
 
-        :param pem_cert: The PEM formatted certificate.
-        :return: A dictionary containing the structured certificate details.
+        Args:
+            pem_cert (str): The PEM formatted certificate.
+
+        Returns:
+            dict: A dictionary containing the structured certificate details.
         """
         with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp_file:
             temp_file.write(pem_cert)
@@ -195,7 +220,8 @@ class CertMonitor:
         """
         Retrieves and structures the SSL certificate details.
 
-        :return: A dictionary containing the structured certificate details.
+        Returns:
+            dict: A dictionary containing the structured certificate details.
         """
         cert = self.fetch_cert()
         if self.is_ip:
@@ -207,7 +233,8 @@ class CertMonitor:
         """
         Returns the raw DER format of the certificate.
 
-        :return: The DER format of the certificate.
+        Returns:
+            bytes: The DER format of the certificate.
         """
         if not self.der:
             self.fetch_cert()
@@ -217,7 +244,8 @@ class CertMonitor:
         """
         Returns the raw PEM format of the certificate.
 
-        :return: The PEM format of the certificate.
+        Returns:
+            str: The PEM format of the certificate.
         """
         if not self.pem:
             self.fetch_cert()
