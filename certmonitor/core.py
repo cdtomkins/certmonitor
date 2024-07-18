@@ -5,12 +5,16 @@ import tempfile
 import os
 
 
+from certmonitor import config
+from certmonitor.validators import get_validators
+
+
 class CertMonitor:
     """
     Class for monitoring and retrieving SSL certificate details from a given host.
     """
 
-    def __init__(self, host, port: int = 443):
+    def __init__(self, host, port: int = 443, enabled_validators=None):
         """
         Initializes the CertMonitor with the specified host and port.
 
@@ -23,6 +27,25 @@ class CertMonitor:
         self.is_ip = self._is_ip_address(host)
         self.der = None
         self.pem = None
+        self.cert_info = None
+        self.validators = get_validators()
+        self.enabled_validators = enabled_validators or config.ENABLED_VALIDATORS
+
+    def validate(self, validator_args=None):
+        if not self.cert_info or "error" in self.cert_info:
+            print(
+                f"Skipping validation due to error in certificate retrieval: {self.cert_info.get('error', 'Unknown error')}"
+            )
+            return None
+
+        results = {}
+        for validator in self.validators:
+            if validator.name in self.enabled_validators:
+                args = [self.cert_info, self.host, self.port]
+                if validator_args and validator.name in validator_args:
+                    args.extend(validator_args[validator.name])
+                results[validator.name] = validator.validate(*args)
+        return results
 
     def _is_ip_address(self, host):
         """
@@ -216,6 +239,56 @@ class CertMonitor:
 
         return cert_details
 
+    def _extract_public_key_info(self):
+        """
+        Extracts basic public key information from the certificate.
+
+        Returns:
+            dict: A dictionary containing public key information.
+        """
+        if not self.der:
+            return None
+
+        try:
+            # Find the subject public key info section
+            spki_start = self.der.find(b"\x30\x82")  # Start of the SubjectPublicKeyInfo
+            if spki_start == -1:
+                return None
+
+            # Extract the algorithm identifier
+            alg_oid_start = spki_start + 15  # Typical offset to algorithm OID
+            alg_oid = self.der[
+                alg_oid_start : alg_oid_start + 9
+            ]  # 9 bytes for RSA or EC OID
+
+            key_info = {}
+
+            if alg_oid == b"\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01":  # RSA OID
+                key_info["algorithm"] = "RSA"
+                # Find the modulus (which gives us the key size)
+                mod_start = self.der.find(b"\x02\x82", spki_start)  # Start of modulus
+                if mod_start != -1:
+                    mod_length = struct.unpack(
+                        ">H", self.der[mod_start + 2 : mod_start + 4]
+                    )[0]
+                    key_info["size"] = mod_length * 8  # Convert bytes to bits
+            elif alg_oid.startswith(b"\x2a\x86\x48\xce\x3d\x02\x01"):  # EC OID
+                key_info["algorithm"] = "EC"
+                # Try to determine the curve
+                curve_oid = self.der[alg_oid_start + 9 : alg_oid_start + 15]
+                curves = {
+                    b"\x2a\x86\x48\xce\x3d\x03\x01\x07": "secp256r1",
+                    b"\x2b\x81\x04\x00\x22": "secp384r1",
+                    b"\x2b\x81\x04\x00\x23": "secp521r1",
+                }
+                key_info["curve"] = curves.get(curve_oid, "unknown")
+
+            return key_info
+
+        except Exception as e:
+            print(f"Error extracting public key info: {str(e)}")
+            return None
+
     def get_structured_cert(self):
         """
         Retrieves and structures the SSL certificate details.
@@ -225,9 +298,13 @@ class CertMonitor:
         """
         cert = self.fetch_cert()
         if self.is_ip:
-            return self.to_dict_ip(cert)
+            cert_info = self.to_dict_ip(cert)
+            self.cert_info = cert_info
+            return cert_info
         else:
-            return self.to_dict_hostname(cert)
+            cert_info = self.to_dict_hostname(cert)
+            self.cert_info = cert_info
+            return self.cert_info
 
     def get_raw_der(self):
         """
