@@ -7,6 +7,7 @@ import os
 from certmonitor import config
 from certmonitor.validators import get_validators
 from certmonitor.error_handlers import ErrorHandler
+from certmonitor.cipher_algorithms import parse_cipher_suite
 
 
 class CertMonitor:
@@ -84,7 +85,7 @@ class CertMonitor:
         except ValueError:
             return False
 
-    def fetch_cert(self):
+    def _fetch_raw_cert(self):
         """
         Fetches the SSL certificate details based on whether the host is an IP address or a hostname.
 
@@ -154,7 +155,7 @@ class CertMonitor:
                 "UnknownError", str(e), self.host, self.port
             )
 
-    def to_dict_hostname(self, data):
+    def _to_dict_hostname(self, data):
         """
         Converts the certificate data obtained via hostname into a structured dictionary format.
 
@@ -171,15 +172,15 @@ class CertMonitor:
                 if key in result:
                     if not isinstance(result[key], list):
                         result[key] = [result[key]]
-                    result[key].append(self.to_dict_hostname(value))
+                    result[key].append(self._to_dict_hostname(value))
                 else:
-                    result[key] = self.to_dict_hostname(value)
+                    result[key] = self._to_dict_hostname(value)
             return result
 
         if isinstance(data, (tuple, list)):
             if all(isinstance(item, tuple) and len(item) == 2 for item in data):
                 return _handle_duplicate_keys(data)
-            return [self.to_dict_hostname(item) for item in data]
+            return [self._to_dict_hostname(item) for item in data]
         elif isinstance(data, dict):
             result = {}
             for key, value in data.items():
@@ -188,12 +189,12 @@ class CertMonitor:
                         [item for sublist in value for item in sublist]
                     )
                 else:
-                    result[key] = self.to_dict_hostname(value)
+                    result[key] = self._to_dict_hostname(value)
             return result
         else:
             return data
 
-    def to_dict_ip(self, data):
+    def _to_dict_ip(self, data):
         """
         Converts the certificate data obtained via IP address into a structured dictionary format.
 
@@ -210,15 +211,15 @@ class CertMonitor:
                 if key in result:
                     if not isinstance(result[key], list):
                         result[key] = [result[key]]
-                    result[key].append(self.to_dict_ip(value))
+                    result[key].append(self._to_dict_ip(value))
                 else:
-                    result[key] = self.to_dict_ip(value)
+                    result[key] = self._to_dict_ip(value)
             return result
 
         if isinstance(data, (tuple, list)):
             if all(isinstance(item, tuple) and len(item) == 2 for item in data):
                 return _handle_duplicate_keys(data)
-            return [self.to_dict_ip(item) for item in data]
+            return [self._to_dict_ip(item) for item in data]
         elif isinstance(data, dict):
             result = {}
             for key, value in data.items():
@@ -227,7 +228,7 @@ class CertMonitor:
                         [item for sublist in value for item in sublist]
                     )
                 else:
-                    result[key] = self.to_dict_ip(value)
+                    result[key] = self._to_dict_ip(value)
             return result
         else:
             return data
@@ -261,13 +262,13 @@ class CertMonitor:
         Returns:
             dict: A dictionary containing the structured certificate details.
         """
-        cert = self.fetch_cert()
+        cert = self._fetch_raw_cert()
         if self.is_ip:
-            cert_info = self.to_dict_ip(cert)
+            cert_info = self._to_dict_ip(cert)
             self.cert_info = cert_info
             return cert_info
         else:
-            cert_info = self.to_dict_hostname(cert)
+            cert_info = self._to_dict_hostname(cert)
             self.cert_info = cert_info
             return self.cert_info
 
@@ -279,7 +280,7 @@ class CertMonitor:
             bytes: The DER format of the certificate.
         """
         if not self.der:
-            self.fetch_cert()
+            self._fetch_raw_cert()
         return self.der
 
     def get_raw_pem(self):
@@ -290,5 +291,75 @@ class CertMonitor:
             str: The PEM format of the certificate.
         """
         if not self.pem:
-            self.fetch_cert()
+            self._fetch_raw_cert()
         return self.pem
+
+    def _fetch_raw_cipher(self):
+        """
+        Returns the raw cipher format of the certificate.
+
+        Returns:
+            tuple: The cipher format of the certificate.
+        """
+        context = ssl.create_default_context()
+        try:
+            with socket.create_connection((self.host, self.port), timeout=10) as sock:
+                with context.wrap_socket(sock, server_hostname=self.host) as ssock:
+                    self.cipher = ssock.cipher()
+                    return self.cipher
+        except ssl.SSLError as e:
+            return self.error_handler.handle_error(
+                "SSLError", str(e), self.host, self.port
+            )
+        except socket.error as e:
+            return self.error_handler.handle_error(
+                "SocketError", str(e), self.host, self.port
+            )
+        except Exception as e:
+            return self.error_handler.handle_error(
+                "UnknownError", str(e), self.host, self.port
+            )
+
+    def get_cipher_info(self):
+        """
+        Retrieves and structures the cipher information of the SSL/TLS connection.
+
+        Returns:
+            dict: A dictionary containing structured cipher information.
+        """
+        raw_cipher = self._fetch_raw_cipher()
+
+        # Check if raw_cipher is an error response
+        if isinstance(raw_cipher, dict) and "error" in raw_cipher:
+            return raw_cipher  # Return the error as is
+
+        # If raw_cipher is not an error, it should be a tuple of 3 elements
+        if not isinstance(raw_cipher, tuple) or len(raw_cipher) != 3:
+            return self.error_handler.handle_error(
+                "CipherInfoError", "Unexpected cipher info format", self.host, self.port
+            )
+
+        cipher_suite, protocol_version, key_bit_length = raw_cipher
+
+        parsed_cipher = parse_cipher_suite(cipher_suite)
+
+        result = {
+            "cipher_suite": {
+                "name": cipher_suite,
+                "encryption_algorithm": parsed_cipher["encryption"],
+                "message_authentication_code": parsed_cipher["mac"],
+            },
+            "protocol_version": protocol_version,
+            "key_bit_length": key_bit_length,
+        }
+
+        if protocol_version == "TLSv1.3":
+            result["cipher_suite"]["key_exchange_algorithm"] = (
+                "Not applicable (TLS 1.3 uses ephemeral key exchange by default)"
+            )
+        else:
+            result["cipher_suite"]["key_exchange_algorithm"] = parsed_cipher[
+                "key_exchange"
+            ]
+
+        return result
