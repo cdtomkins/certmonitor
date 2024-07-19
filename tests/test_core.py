@@ -70,6 +70,6 @@ def test_fetch_cert_error(cert_monitor):
     with patch(
         "socket.create_connection", side_effect=socket.error("Connection failed")
     ):
-        result = cert_monitor.fetch_cert()
+        result = cert_monitor._fetch_raw_cert()
     assert "error" in result
     assert result["error"] == "SocketError"
