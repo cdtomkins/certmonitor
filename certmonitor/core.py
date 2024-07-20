@@ -38,8 +38,61 @@ class CertMonitor:
         self.validators = get_validators()
         self.enabled_validators = enabled_validators or config.ENABLED_VALIDATORS
         self.error_handler = ErrorHandler()
+        self.socket = None
+        self.ssl_socket = None
 
-    def validate(self, validator_args=None):
+    def __enter__(self):
+        """Enter the runtime context related to this object."""
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the runtime context related to this object."""
+        self.close()
+
+    def connect(self):
+        """Establish a new SSL connection."""
+        if self.socket:
+            self.socket.close()
+        if self.ssl_socket:
+            self.ssl_socket.close()
+
+        context = ssl.create_default_context()
+        if self.is_ip:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+
+        try:
+            self.socket = socket.create_connection((self.host, self.port), timeout=10)
+            self.ssl_socket = context.wrap_socket(
+                self.socket, server_hostname=self.host
+            )
+        except Exception as e:
+            self.close()
+            raise e
+
+    def close(self):
+        """Explicitly close the connection."""
+        if self.ssl_socket:
+            self.ssl_socket.close()
+        if self.socket:
+            self.socket.close()
+        self.ssl_socket = None
+        self.socket = None
+
+    def _ensure_connection(self):
+        """Ensure that a connection is established and valid."""
+        if self.ssl_socket is None or self.socket is None:
+            self.connect()
+        else:
+            # Check if the connection is still alive
+            try:
+                self.ssl_socket.getpeername()
+            except socket.error:
+                # Connection is dead, re-establish
+                self.connect()
+
+    def validate(self, validator_args=None) -> dict:
         """
         Validates the certificate using the enabled validators.
 
@@ -69,7 +122,7 @@ class CertMonitor:
                 results[validator.name] = validator.validate(*args)
         return results
 
-    def _is_ip_address(self, host):
+    def _is_ip_address(self, host) -> bool:
         """
         Checks if the provided host is an IP address.
 
@@ -85,34 +138,18 @@ class CertMonitor:
         except ValueError:
             return False
 
-    def _fetch_raw_cert(self):
+    def _fetch_raw_cert(self) -> dict:
         """
-        Fetches the SSL certificate details based on whether the host is an IP address or a hostname.
+        Fetches the SSL certificate details.
 
         Returns:
             dict: The certificate details or an error message.
         """
-        if self.is_ip:
-            cert = self._fetch_cert_by_ip()
-            return cert
-        else:
-            cert = self._fetch_cert_by_hostname()
-            return cert
-
-    def _fetch_cert_by_hostname(self):
-        """
-        Fetches the SSL certificate details using the hostname.
-
-        Returns:
-            dict: The certificate details or an error message.
-        """
-        context = ssl.create_default_context()
+        self._ensure_connection()
         try:
-            with socket.create_connection((self.host, self.port), timeout=10) as sock:
-                with context.wrap_socket(sock, server_hostname=self.host) as ssock:
-                    self.der = ssock.getpeercert(binary_form=True)
-                    self.pem = ssl.DER_cert_to_PEM_cert(self.der)
-                    return ssock.getpeercert()
+            self.der = self.ssl_socket.getpeercert(binary_form=True)
+            self.pem = ssl.DER_cert_to_PEM_cert(self.der)
+            return self.ssl_socket.getpeercert()
         except ssl.SSLError as e:
             return self.error_handler.handle_error(
                 "SSLError", str(e), self.host, self.port
@@ -126,36 +163,7 @@ class CertMonitor:
                 "UnknownError", str(e), self.host, self.port
             )
 
-    def _fetch_cert_by_ip(self):
-        """
-        Fetches the SSL certificate details using the IP address.
-
-        Returns:
-            dict: The certificate details or an error message.
-        """
-        context = ssl.create_default_context()
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE  # Disable certificate verification
-        try:
-            with socket.create_connection((self.host, self.port), timeout=10) as sock:
-                with context.wrap_socket(sock, server_hostname=self.host) as ssock:
-                    self.der = ssock.getpeercert(binary_form=True)
-                    self.pem = ssl.DER_cert_to_PEM_cert(self.der)
-                    return self._parse_pem_cert(self.pem)
-        except ssl.SSLError as e:
-            return self.error_handler.handle_error(
-                "SSLError", str(e), self.host, self.port
-            )
-        except socket.error as e:
-            return self.error_handler.handle_error(
-                "SocketError", str(e), self.host, self.port
-            )
-        except Exception as e:
-            return self.error_handler.handle_error(
-                "UnknownError", str(e), self.host, self.port
-            )
-
-    def _to_dict_hostname(self, data):
+    def _to_dict_hostname(self, data) -> dict:
         """
         Converts the certificate data obtained via hostname into a structured dictionary format.
 
@@ -166,7 +174,7 @@ class CertMonitor:
             dict: A dictionary containing the structured certificate data.
         """
 
-        def _handle_duplicate_keys(data):
+        def _handle_duplicate_keys(data) -> dict:
             result = {}
             for key, value in data:
                 if key in result:
@@ -194,7 +202,7 @@ class CertMonitor:
         else:
             return data
 
-    def _to_dict_ip(self, data):
+    def _to_dict_ip(self, data) -> dict:
         """
         Converts the certificate data obtained via IP address into a structured dictionary format.
 
@@ -233,7 +241,7 @@ class CertMonitor:
         else:
             return data
 
-    def _parse_pem_cert(self, pem_cert):
+    def _parse_pem_cert(self, pem_cert) -> dict:
         """
         Parses a PEM formatted certificate to extract relevant details.
 
@@ -255,7 +263,7 @@ class CertMonitor:
 
         return cert_details
 
-    def get_cert_info(self):
+    def get_cert_info(self) -> dict:
         """
         Retrieves and structures the SSL certificate details.
 
@@ -272,7 +280,7 @@ class CertMonitor:
             self.cert_info = cert_info
             return self.cert_info
 
-    def get_raw_der(self):
+    def get_raw_der(self) -> bytes:
         """
         Returns the raw DER format of the certificate.
 
@@ -283,7 +291,7 @@ class CertMonitor:
             self._fetch_raw_cert()
         return self.der
 
-    def get_raw_pem(self):
+    def get_raw_pem(self) -> str:
         """
         Returns the raw PEM format of the certificate.
 
@@ -294,33 +302,22 @@ class CertMonitor:
             self._fetch_raw_cert()
         return self.pem
 
-    def _fetch_raw_cipher(self):
+    def _fetch_raw_cipher(self) -> tuple:
         """
         Returns the raw cipher format of the certificate.
 
         Returns:
             tuple: The cipher format of the certificate.
         """
-        context = ssl.create_default_context()
+        self._ensure_connection()
         try:
-            with socket.create_connection((self.host, self.port), timeout=10) as sock:
-                with context.wrap_socket(sock, server_hostname=self.host) as ssock:
-                    self.cipher = ssock.cipher()
-                    return self.cipher
-        except ssl.SSLError as e:
-            return self.error_handler.handle_error(
-                "SSLError", str(e), self.host, self.port
-            )
-        except socket.error as e:
-            return self.error_handler.handle_error(
-                "SocketError", str(e), self.host, self.port
-            )
+            return self.ssl_socket.cipher()
         except Exception as e:
             return self.error_handler.handle_error(
                 "UnknownError", str(e), self.host, self.port
             )
 
-    def get_cipher_info(self):
+    def get_cipher_info(self) -> dict:
         """
         Retrieves and structures the cipher information of the SSL/TLS connection.
 
@@ -363,3 +360,22 @@ class CertMonitor:
             ]
 
         return result
+
+
+# Usage examples:
+
+# Using with 'with' statement:
+# with CertMonitor("example.com") as monitor:
+#     cert_info = monitor.get_cert_info()
+#     cipher_info = monitor.get_cipher_info()
+#     # ... do more operations ...
+
+# Using connect() and close() methods:
+# monitor = CertMonitor("example.com")
+# try:
+#     monitor.connect()
+#     cert_info = monitor.get_cert_info()
+#     cipher_info = monitor.get_cipher_info()
+#     # ... do more operations ...
+# finally:
+#     monitor.close()
