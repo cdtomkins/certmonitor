@@ -67,9 +67,17 @@ def test_get_raw_pem(cert_monitor):
 
 
 def test_fetch_cert_error(cert_monitor):
-    with patch(
-        "socket.create_connection", side_effect=socket.error("Connection failed")
-    ):
+    # Mock the _ensure_connection method to do nothing
+    with patch.object(cert_monitor, "_ensure_connection"):
+        # Mock the ssl_socket attribute
+        mock_ssl_socket = MagicMock()
+        mock_ssl_socket.getpeercert.side_effect = socket.error("Connection failed")
+        cert_monitor.ssl_socket = mock_ssl_socket
+
+        # Call the method we're testing
         result = cert_monitor._fetch_raw_cert()
+
+    # Assert the result
     assert "error" in result
     assert result["error"] == "SocketError"
+    assert "Connection failed" in result["message"]
