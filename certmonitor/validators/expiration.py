@@ -44,7 +44,7 @@ class ExpirationValidator(BaseValidator):
             )
         if days_to_expiry > 398:
             warnings.append(
-                f"Certificate is valid for more than industry standard (398 days) / ({days_to_expiry} days)"
+                f"Certificate is valid for more than industry standard ({days_to_expiry}/398 days)"
             )
 
         return {
