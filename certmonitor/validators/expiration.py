@@ -34,7 +34,11 @@ class ExpirationValidator(BaseValidator):
         days_to_expiry = (not_after - now).days
 
         warnings = []
-        if days_to_expiry < 7:
+        if days_to_expiry < 0:
+            warnings.append(
+                f"Certificate is expired and has been expired for ({days_to_expiry} days)"
+            )
+        if days_to_expiry < 7 and days_to_expiry > 0:
             warnings.append(
                 f"Certificate is expiring in less than 1 week ({days_to_expiry} days)"
             )
