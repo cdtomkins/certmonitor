@@ -67,6 +67,9 @@ def test_get_raw_pem(cert_monitor):
 
 
 def test_fetch_cert_error(cert_monitor):
+    # Set the protocol to 'ssl'
+    cert_monitor.protocol = "ssl"
+
     # Mock the _ensure_connection method to do nothing
     with patch.object(cert_monitor, "_ensure_connection"):
         # Mock the ssl_socket attribute
