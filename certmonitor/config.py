@@ -1,7 +1,7 @@
 import os
 
 # Default validators if not set in environment
-DEFAULT_VALIDATORS = ["expiration", "hostname"]
+DEFAULT_VALIDATORS = ["expiration", "hostname", "root_certificate"]
 
 # Read from environment variable, fall back to default if not set
 ENABLED_VALIDATORS = (
