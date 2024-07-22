@@ -3,7 +3,8 @@ class ErrorHandler:
     Class for handling errors in a flexible manner.
     """
 
-    def handle_error(self, error_type, message, host, port):
+    @staticmethod
+    def handle_error(error_type, message, host, port):
         """
         Handles errors encountered during certificate retrieval.
 
