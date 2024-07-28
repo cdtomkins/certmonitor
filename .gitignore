@@ -269,3 +269,8 @@ $RECYCLE.BIN/
 .venv
 .vscode
 test.py
+.vscode/launch.json
+
+# Reference files that should not be included in the final package
+crypto_openssl_test.py
+crypto_standard_lib.py
