@@ -5,10 +5,7 @@ from certmonitor import CertMonitor
 # Example usage
 if __name__ == "__main__":
     # Test with a hostname
-    with CertMonitor(
-        "example.com",
-        enabled_validators=["subject_alt_names"],
-    ) as monitor:
+    with CertMonitor("example.com", enabled_validators=["subject_alt_names"]) as monitor:
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate(validator_args={"subject_alt_names": ["www.example.com"]})
         # public_key_info = monitor._extract_public_key_info()
@@ -37,8 +34,7 @@ if __name__ == "__main__":
 
     # Test with an hostname with very few SANS
     with CertMonitor(
-        "www.networktocode.com",
-        enabled_validators=["hostname", "expiration", "subject_alt_names"],
+        "www.networktocode.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]
     ) as monitor:
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate(validator_args={"subject_alt_names": ["networktocode.com"]})
@@ -46,10 +42,7 @@ if __name__ == "__main__":
         print(json.dumps(structured_cert, indent=2))
 
     # Test with an hostname with moderate SANS
-    with CertMonitor(
-        "www.cisco.com",
-        enabled_validators=["hostname", "expiration", "subject_alt_names"],
-    ) as monitor:
+    with CertMonitor("www.cisco.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]) as monitor:
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate(validator_args={"subject_alt_names": ["cisco.com"]})
         print("Hostname with few SANS:")
@@ -63,8 +56,7 @@ if __name__ == "__main__":
 
     # Test with another hosthame with no SANS
     with CertMonitor(
-        "demo.nautobot.com",
-        enabled_validators=["hostname", "expiration", "subject_alt_names"],
+        "demo.nautobot.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]
     ) as monitor:
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate(validator_args={"subject_alt_names": ["testsan.nautobot.com"]})
