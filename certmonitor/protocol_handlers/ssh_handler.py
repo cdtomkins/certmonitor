@@ -10,13 +10,9 @@ class SSHHandler(BaseProtocolHandler):
         try:
             self.socket = socket.create_connection((self.host, self.port), timeout=10)
         except socket.error as e:
-            return self.error_handler.handle_error(
-                "SocketError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("SocketError", str(e), self.host, self.port)
         except Exception as e:
-            return self.error_handler.handle_error(
-                "UnknownError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("UnknownError", str(e), self.host, self.port)
 
     def fetch_raw_cert(self):
         try:
@@ -30,13 +26,9 @@ class SSHHandler(BaseProtocolHandler):
                     "software_version": match.group(2),
                 }
             else:
-                return self.error_handler.handle_error(
-                    "SSHError", "Invalid SSH banner", self.host, self.port
-                )
+                return self.error_handler.handle_error("SSHError", "Invalid SSH banner", self.host, self.port)
         except Exception as e:
-            return self.error_handler.handle_error(
-                "SSHError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("SSHError", str(e), self.host, self.port)
 
     def close(self):
         if self.socket:

@@ -9,9 +9,7 @@ if __name__ == "__main__":
         enabled_validators=["subject_alt_names"],
     ) as monitor:
         structured_cert = monitor.get_cert_info()
-        validation_results = monitor.validate(
-            validator_args={"subject_alt_names": ["www.example.com"]}
-        )
+        validation_results = monitor.validate(validator_args={"subject_alt_names": ["www.example.com"]})
         # public_key_info = monitor._extract_public_key_info()
         print("Hostname test:")
         print(json.dumps(structured_cert, indent=2))
@@ -28,9 +26,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 50 + "\n")
 
     # Test with an IPv6 address
-    with CertMonitor(
-        "2606:2800:220:1:248:1893:25c8:1946"
-    ) as monitor:  # IPv6 for example.com
+    with CertMonitor("2606:2800:220:1:248:1893:25c8:1946") as monitor:  # IPv6 for example.com
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate()
         print("IPv6 test:")
@@ -44,9 +40,7 @@ if __name__ == "__main__":
         enabled_validators=["hostname", "expiration", "subject_alt_names"],
     ) as monitor:
         structured_cert = monitor.get_cert_info()
-        validation_results = monitor.validate(
-            validator_args={"subject_alt_names": ["networktocode.com"]}
-        )
+        validation_results = monitor.validate(validator_args={"subject_alt_names": ["networktocode.com"]})
         print("Hostname with few SANS:")
         print(json.dumps(structured_cert, indent=2))
 
@@ -56,9 +50,7 @@ if __name__ == "__main__":
         enabled_validators=["hostname", "expiration", "subject_alt_names"],
     ) as monitor:
         structured_cert = monitor.get_cert_info()
-        validation_results = monitor.validate(
-            validator_args={"subject_alt_names": ["cisco.com"]}
-        )
+        validation_results = monitor.validate(validator_args={"subject_alt_names": ["cisco.com"]})
         print("Hostname with few SANS:")
         print(json.dumps(structured_cert, indent=2))
 
@@ -74,9 +66,7 @@ if __name__ == "__main__":
         enabled_validators=["hostname", "expiration", "subject_alt_names"],
     ) as monitor:
         structured_cert = monitor.get_cert_info()
-        validation_results = monitor.validate(
-            validator_args={"subject_alt_names": ["testsan.nautobot.com"]}
-        )
+        validation_results = monitor.validate(validator_args={"subject_alt_names": ["testsan.nautobot.com"]})
         print("Hostname with no SANS:")
         print(json.dumps(structured_cert, indent=2))
 

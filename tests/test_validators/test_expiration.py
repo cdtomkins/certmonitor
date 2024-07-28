@@ -10,9 +10,7 @@ def test_expiration_validator(sample_cert):
 
 
 def test_expired_cert(sample_cert):
-    sample_cert["notAfter"] = (datetime.now() - timedelta(days=1)).strftime(
-        "%b %d %H:%M:%S %Y GMT"
-    )
+    sample_cert["notAfter"] = (datetime.now() - timedelta(days=1)).strftime("%b %d %H:%M:%S %Y GMT")
     validator = ExpirationValidator()
     result = validator.validate(sample_cert, "www.example.com", 443)
     assert result["is_valid"] == False

@@ -40,10 +40,7 @@ class RootCertificateValidator(BaseValidator):
         is_trusted = (
             (has_ocsp and has_ca_issuers)
             and not is_self_signed
-            and (
-                "untrusted" not in common_name.lower()
-                and "untrusted" not in organization_name.lower()
-            )
+            and ("untrusted" not in common_name.lower() and "untrusted" not in organization_name.lower())
         )
 
         warnings = []
@@ -54,9 +51,7 @@ class RootCertificateValidator(BaseValidator):
         if is_self_signed:
             warnings.append("Certificate is self-signed.")
         if not is_trusted:
-            warnings.append(
-                f"The certificate is issued by an untrusted root CA: {organization_name} ({common_name})"
-            )
+            warnings.append(f"The certificate is issued by an untrusted root CA: {organization_name} ({common_name})")
 
         return {
             "is_valid": is_trusted,

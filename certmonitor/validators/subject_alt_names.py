@@ -59,9 +59,7 @@ class SubjectAltNamesValidator(BaseValidator):
         if alternate_names:
             contains_alternate = {}
             for alternate_name in alternate_names:
-                alt_is_valid, alt_reason = self._check_name_in_sans_with_reason(
-                    alternate_name, dns_sans, ip_sans
-                )
+                alt_is_valid, alt_reason = self._check_name_in_sans_with_reason(alternate_name, dns_sans, ip_sans)
                 contains_alternate[alternate_name] = {
                     "name": alternate_name,
                     "is_valid": alt_is_valid,
@@ -71,14 +69,10 @@ class SubjectAltNamesValidator(BaseValidator):
 
         # Additional checks and warnings
         if not dns_sans and not ip_sans:
-            result["warnings"].append(
-                "Certificate does not contain any DNS or IP Address SANs"
-            )
+            result["warnings"].append("Certificate does not contain any DNS or IP Address SANs")
 
         if result["count"] > 100:
-            result["warnings"].append(
-                f"Certificate contains an unusually high number of SANs ({result['count']})"
-            )
+            result["warnings"].append(f"Certificate contains an unusually high number of SANs ({result['count']})")
 
         if not result["contains_host"]["is_valid"]:
             result["warnings"].append(

@@ -34,9 +34,7 @@ def sample_cert():
             ]
         },
         "OCSP": ["http://ocsp.digicert.com"],
-        "caIssuers": [
-            "http://cacerts.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt"
-        ],
+        "caIssuers": ["http://cacerts.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt"],
         "crlDistributionPoints": [
             "http://crl3.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crl",
             "http://crl4.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crl",

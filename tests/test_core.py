@@ -45,13 +45,9 @@ def test_validate_with_args(cert_monitor, sample_cert):
     mock_validator.name = "subject_alt_names"
     with patch.object(cert_monitor, "validators", [mock_validator]):
         cert_monitor.enabled_validators = ["subject_alt_names"]
-        result = cert_monitor.validate(
-            validator_args={"subject_alt_names": ["example.com"]}
-        )
+        result = cert_monitor.validate(validator_args={"subject_alt_names": ["example.com"]})
     assert "subject_alt_names" in result
-    mock_validator.validate.assert_called_once_with(
-        sample_cert, cert_monitor.host, cert_monitor.port, ["example.com"]
-    )
+    mock_validator.validate.assert_called_once_with(sample_cert, cert_monitor.host, cert_monitor.port, ["example.com"])
 
 
 def test_get_raw_der(cert_monitor):

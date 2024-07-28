@@ -106,18 +106,14 @@ class CertMonitor:
                 finally:
                     sock.setblocking(True)
         except Exception as e:
-            return self.error_handler.handle_error(
-                "ConnectionError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("ConnectionError", str(e), self.host, self.port)
 
     def _ensure_connection(self):
         """Ensures that a valid connection is established."""
         if not self.connected:
             connect_result = self.connect()
             if connect_result is not None:  # This means there was an error
-                raise ConnectionError(
-                    f"Failed to establish connection: {connect_result}"
-                )
+                raise ConnectionError(f"Failed to establish connection: {connect_result}")
         else:
             try:
                 self.handler.check_connection()
@@ -126,9 +122,7 @@ class CertMonitor:
                 self.connected = False
                 connect_result = self.connect()
                 if connect_result is not None:  # This means there was an error
-                    raise ConnectionError(
-                        f"Failed to re-establish connection: {connect_result}"
-                    )
+                    raise ConnectionError(f"Failed to re-establish connection: {connect_result}")
 
     def _is_ip_address(self, host: str) -> bool:
         """Check if the provided host is an IP address."""
@@ -211,9 +205,7 @@ class CertMonitor:
             result = {}
             for key, value in data.items():
                 if key in ["subject", "issuer"]:
-                    result[key] = _handle_duplicate_keys(
-                        [item for sublist in value for item in sublist]
-                    )
+                    result[key] = _handle_duplicate_keys([item for sublist in value for item in sublist])
                 else:
                     result[key] = self._to_structured_dict(value)
             return result
@@ -236,9 +228,7 @@ class CertMonitor:
                 logging.debug("Certificate info retrieved and structured")
             except Exception as e:
                 logging.exception("Error while getting certificate info")
-                return self.error_handler.handle_error(
-                    "UnknownError", str(e), self.host, self.port
-                )
+                return self.error_handler.handle_error("UnknownError", str(e), self.host, self.port)
 
         return self.cert_info
 
@@ -257,9 +247,7 @@ class CertMonitor:
         try:
             return self.handler.get_raw_der()
         except Exception as e:
-            return self.error_handler.handle_error(
-                "CertificateError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("CertificateError", str(e), self.host, self.port)
 
     def get_raw_pem(self) -> str:
         """Return the raw PEM format of the certificate."""
@@ -277,9 +265,7 @@ class CertMonitor:
             der = self.handler.get_raw_der()
             return ssl.DER_cert_to_PEM_cert(der)
         except Exception as e:
-            return self.error_handler.handle_error(
-                "CertificateError", str(e), self.host, self.port
-            )
+            return self.error_handler.handle_error("CertificateError", str(e), self.host, self.port)
 
     def get_cipher_info(self) -> dict:
         """Retrieve and structure the cipher information of the SSL/TLS connection."""
@@ -313,9 +299,7 @@ class CertMonitor:
                 "Not applicable (TLS 1.3 uses ephemeral key exchange by default)"
             )
         else:
-            result["cipher_suite"]["key_exchange_algorithm"] = parsed_cipher[
-                "key_exchange"
-            ]
+            result["cipher_suite"]["key_exchange_algorithm"] = parsed_cipher["key_exchange"]
 
         return result
 
@@ -341,9 +325,7 @@ class CertMonitor:
                 args = [self.cert_info, self.host, self.port]
                 if validator_args and validator.name in validator_args:
                     if validator.name == "subject_alt_names":
-                        args.append(
-                            validator_args[validator.name]
-                        )  # Pass the list directly
+                        args.append(validator_args[validator.name])  # Pass the list directly
                     else:
                         args.extend(validator_args[validator.name])
                 results[validator.name] = validator.validate(*args)
