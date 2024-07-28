@@ -1,7 +1,6 @@
 # protocol_handlers/base.py
 
 from abc import ABC, abstractmethod
-from certmonitor.error_handlers import ErrorHandler
 
 
 class BaseProtocolHandler(ABC):
