@@ -1,7 +1,8 @@
 # protocol_handlers/ssh_handler.py
 
-import socket
 import re
+import socket
+
 from .base import BaseProtocolHandler
 
 

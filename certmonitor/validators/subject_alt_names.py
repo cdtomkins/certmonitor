@@ -1,5 +1,6 @@
-from .base import BaseValidator
 import ipaddress
+
+from .base import BaseValidator
 
 
 class SubjectAltNamesValidator(BaseValidator):

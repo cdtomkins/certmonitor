@@ -1,5 +1,6 @@
-from certmonitor import CertMonitor
 import json
+
+from certmonitor import CertMonitor
 
 # Example usage
 if __name__ == "__main__":

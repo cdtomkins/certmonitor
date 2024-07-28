@@ -1,5 +1,6 @@
-from unittest.mock import patch, MagicMock
 import socket
+from unittest.mock import MagicMock, patch
+
 from certmonitor import CertMonitor
 
 

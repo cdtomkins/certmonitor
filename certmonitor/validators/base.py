@@ -15,7 +15,6 @@ class BaseValidator(ABC):
         Returns:
             str: The name of the validator.
         """
-        pass
 
     @abstractmethod
     def validate(self, cert, host, port):
@@ -30,4 +29,3 @@ class BaseValidator(ABC):
         Returns:
             dict: The validation result.
         """
-        pass

@@ -1,5 +1,5 @@
-import re
 from functools import lru_cache
+import re
 
 # Combine all algorithms into a single dictionary
 ALL_ALGORITHMS = {

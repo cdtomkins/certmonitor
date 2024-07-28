@@ -1,5 +1,6 @@
-from certmonitor.validators.expiration import ExpirationValidator
 from datetime import datetime, timedelta
+
+from certmonitor.validators.expiration import ExpirationValidator
 
 
 def test_expiration_validator(sample_cert):

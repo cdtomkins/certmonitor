@@ -1,8 +1,9 @@
-import ssl
 import logging
 import socket
+import ssl
+from typing import Any, Dict, Optional, Tuple
 import warnings
-from typing import Optional, Dict, Any, Tuple
+
 from .base import BaseProtocolHandler
 
 
@@ -56,8 +57,8 @@ class SSLHandler(BaseProtocolHandler):
                         self.secure_socket = context.wrap_socket(self.socket, server_hostname=self.host)
                         self.tls_version = self.secure_socket.version()
                         return None
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logging.error(f"Error connecting with unsafe legacy renegotiation: {e}")
             except Exception:
                 if self.socket:
                     self.socket.close()

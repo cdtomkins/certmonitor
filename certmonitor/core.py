@@ -1,17 +1,17 @@
+import ipaddress
+import logging
+import os
 import socket
 import ssl
-import ipaddress
 import tempfile
-import os
-from typing import Optional, Dict, Any
-import logging
+from typing import Any, Dict, Optional
 
 from certmonitor import config
-from certmonitor.validators import get_validators
-from certmonitor.error_handlers import ErrorHandler
 from certmonitor.cipher_algorithms import parse_cipher_suite
-from certmonitor.protocol_handlers.ssl_handler import SSLHandler
+from certmonitor.error_handlers import ErrorHandler
 from certmonitor.protocol_handlers.ssh_handler import SSHHandler
+from certmonitor.protocol_handlers.ssl_handler import SSLHandler
+from certmonitor.validators import get_validators
 
 
 class CertMonitor:

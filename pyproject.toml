@@ -47,5 +47,5 @@ ignore = [
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-sort-within-sections = true
-known-local-folder = ["example_app"]
+known-local-folder = ["certmonitor"]
 order-by-type = false
