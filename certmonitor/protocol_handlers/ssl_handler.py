@@ -1,68 +1,81 @@
-# protocol_handlers/ssl_handler.py
-
-import socket
 import ssl
-from typing import Optional, Dict, Any
+import logging
+import socket
+import warnings
+from typing import Optional, Dict, Any, Tuple
 from .base import BaseProtocolHandler
 
 
 class SSLHandler(BaseProtocolHandler):
-    """Handles SSL/TLS connections for certificate monitoring.
-
-    This class provides methods to establish SSL connections, fetch raw certificate
-    and cipher information, and manage the connection lifecycle.
-    """
-
-    def __init__(self, host, port, error_handler):
+    def __init__(self, host: str, port: int, error_handler):
         super().__init__(host, port, error_handler)
+        self.socket = None
         self.secure_socket = None
-        self.der = None
-        self.pem = None
+        self.tls_version = None
 
-    def connect(self, ignore_cert_errors: bool = True) -> Optional[Dict[str, Any]]:
-        """Establishes an SSL connection to the specified host and port.
+    def get_supported_protocols(self):
+        supported_protocols = []
+        for protocol in [
+            ssl.PROTOCOL_TLS_CLIENT,
+            ssl.PROTOCOL_TLSv1_2,
+            ssl.PROTOCOL_TLSv1_1,
+            ssl.PROTOCOL_TLSv1,
+            ssl.PROTOCOL_SSLv23,
+        ]:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    ssl.SSLContext(protocol)
+                supported_protocols.append(protocol)
+            except AttributeError:
+                pass
+        return supported_protocols
 
-        Args:
-            ignore_cert_errors (bool): If True, ignores certificate validation errors. Default is True.
+    def connect(self) -> Optional[Dict[str, Any]]:
+        protocols = self.get_supported_protocols()
+        for protocol in protocols:
+            try:
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
+                    context = ssl.SSLContext(protocol)
+                    context.set_ciphers("ALL:@SECLEVEL=0")
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+                    context.options &= ~ssl.OP_NO_RENEGOTIATION
 
-        Returns:
-            Optional[Dict[str, Any]]: None if connection is successful,
-                                      or a dictionary containing error details if it fails.
-        """
-        try:
-            self.socket = socket.create_connection((self.host, self.port), timeout=10)
+                self.socket = socket.create_connection(
+                    (self.host, self.port), timeout=10
+                )
+                self.secure_socket = context.wrap_socket(
+                    self.socket, server_hostname=self.host
+                )
+                self.tls_version = self.secure_socket.version()
+                return None
+            except ssl.SSLError as e:
+                if "UNSAFE_LEGACY_RENEGOTIATION_DISABLED" in str(e):
+                    # Retry with unsafe legacy renegotiation enabled
+                    try:
+                        context.options &= ~ssl.OP_NO_RENEGOTIATION
+                        self.socket = socket.create_connection(
+                            (self.host, self.port), timeout=10
+                        )
+                        self.secure_socket = context.wrap_socket(
+                            self.socket, server_hostname=self.host
+                        )
+                        self.tls_version = self.secure_socket.version()
+                        return None
+                    except Exception:
+                        pass
+            except Exception:
+                if self.socket:
+                    self.socket.close()
 
-            if ignore_cert_errors:
-                context = ssl._create_unverified_context()
-            else:
-                context = ssl.create_default_context()
-
-            self.secure_socket = context.wrap_socket(
-                self.socket, server_hostname=self.host
-            )
-            return None  # Indicating success
-        except ssl.SSLError as e:
-            return self.error_handler.handle_error(
-                "SSLError", str(e), self.host, self.port
-            )
-        except socket.error as e:
-            return self.error_handler.handle_error(
-                "SocketError", str(e), self.host, self.port
-            )
-        except Exception as e:
-            return self.error_handler.handle_error(
-                "UnknownError", str(e), self.host, self.port
-            )
-
-    def check_connection(self):
-        """Checks if the SSL connection is still valid."""
-        if not self.secure_socket:
-            raise ConnectionError("SSL connection not established")
-        try:
-            # This will raise an exception if the connection is closed
-            self.secure_socket.getpeername()
-        except Exception:
-            raise ConnectionError("SSL connection is no longer valid")
+        return self.error_handler.handle_error(
+            "SSLError",
+            "Failed to establish SSL connection with any protocol",
+            self.host,
+            self.port,
+        )
 
     def fetch_raw_cert(self) -> Dict[str, Any]:
         if not self.secure_socket:
@@ -73,66 +86,45 @@ class SSLHandler(BaseProtocolHandler):
                 self.port,
             )
         try:
-            self.der = self.secure_socket.getpeercert(binary_form=True)
-            if not self.der:
-                return self.error_handler.handle_error(
-                    "CertificateError",
-                    "No certificate received from the server",
-                    self.host,
-                    self.port,
-                )
-            self.pem = ssl.DER_cert_to_PEM_cert(self.der)
-            cert_dict = self.secure_socket.getpeercert()
-            return {"cert_dict": cert_dict, "der": self.der, "pem": self.pem}
-        except ssl.SSLError as e:
-            return self.error_handler.handle_error(
-                "SSLError", str(e), self.host, self.port
-            )
-        except socket.error as e:
-            return self.error_handler.handle_error(
-                "SocketError", str(e), self.host, self.port
-            )
+            cert = self.secure_socket.getpeercert(binary_form=True)
+            return {
+                "cert_dict": self.secure_socket.getpeercert(),
+                "der": cert,
+                "pem": ssl.DER_cert_to_PEM_cert(cert),
+            }
         except Exception as e:
             return self.error_handler.handle_error(
-                "UnknownError", str(e), self.host, self.port
+                "CertificateError", str(e), self.host, self.port
             )
 
-    def fetch_raw_cipher(self):
-        """Fetches the raw cipher information from the SSL connection.
-
-        Returns:
-            tuple: A tuple containing cipher information (cipher name, protocol version, secret bits).
-            dict: An error message if fetching fails.
-        """
-        try:
-            return self.secure_socket.cipher()
-        except Exception as e:
+    def fetch_raw_cipher(self) -> Tuple[str, str, Optional[int]]:
+        if not self.secure_socket:
             return self.error_handler.handle_error(
-                "CipherError", str(e), self.host, self.port
+                "ConnectionError",
+                "SSL connection not established",
+                self.host,
+                self.port,
             )
+        return self.secure_socket.cipher()
 
-    def get_raw_der(self) -> bytes:
-        """Fetches the raw DER-encoded certificate from the SSL connection.
-
-        Returns:
-            bytes: The DER-encoded certificate.
-
-        Raises:
-            ssl.SSLError: If there's an SSL-related error.
-            Exception: For any other unexpected errors.
-        """
-        try:
-            return self.secure_socket.getpeercert(binary_form=True)
-        except ssl.SSLError as e:
-            raise ssl.SSLError(f"SSL error while fetching DER certificate: {str(e)}")
-        except Exception as e:
-            raise Exception(
-                f"Unexpected error while fetching DER certificate: {str(e)}"
-            )
+    def check_connection(self) -> bool:
+        if self.secure_socket:
+            try:
+                self.secure_socket.getpeername()
+                return True
+            except Exception as e:
+                logging.error(f"Error checking connection: {e}")
+                return False
+        return False
 
     def close(self):
-        """Closes the SSL connection and associated sockets."""
         if self.secure_socket:
             self.secure_socket.close()
         if self.socket:
             self.socket.close()
+        self.secure_socket = None
+        self.socket = None
+        self.tls_version = None
+
+    def get_protocol_version(self) -> str:
+        return self.tls_version or "Unknown"
