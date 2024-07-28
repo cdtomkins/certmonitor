@@ -1,4 +1,3 @@
-# core.py
 import socket
 import ssl
 import ipaddress
@@ -16,44 +15,15 @@ from certmonitor.protocol_handlers.ssh_handler import SSHHandler
 
 
 class CertMonitor:
-    """Class for monitoring and retrieving certificate details from a given host.
-
-    This class provides functionality to connect to a host, detect the protocol,
-    fetch certificate information, and perform various operations related to
-    certificate monitoring.
-
-    Attributes:
-        host (str): The hostname or IP address to retrieve the certificate from.
-        port (int): The port to use for the connection.
-        is_ip (bool): Whether the host is an IP address.
-        der (bytes): The DER format of the certificate.
-        pem (str): The PEM format of the certificate.
-        cert_info (dict): Structured certificate information.
-        validators (list): List of available validators.
-        enabled_validators (list): List of enabled validators.
-        error_handler (ErrorHandler): Handler for error management.
-        handler (BaseProtocolHandler): The protocol-specific handler.
-        protocol (str): The detected protocol (e.g., 'ssl' or 'ssh').
-        ignore_cert_errors (bool): Whether to ignore certificate validation errors.
-    """
+    """Class for monitoring and retrieving certificate details from a given host."""
 
     def __init__(
         self,
         host: str,
         port: int = 443,
         enabled_validators: list = config.DEFAULT_VALIDATORS,
-        ignore_cert_errors: bool = True,
     ):
-        """Initialize the CertMonitor with the specified host and port.
-
-        Args:
-            host (str): The hostname or IP address to retrieve the certificate from.
-            port (int, optional): The port to use for the connection. Defaults to 443.
-            enabled_validators (list, optional): List of enabled validators.
-                Defaults to config.DEFAULT_VALIDATORS.
-            ignore_cert_errors (bool, optional): If True, ignores certificate validation errors.
-                Defaults to True.
-        """
+        """Initialize the CertMonitor with the specified host and port."""
         self.host = host
         self.port = port
         self.is_ip = self._is_ip_address(host)
@@ -65,7 +35,6 @@ class CertMonitor:
         self.error_handler = ErrorHandler()
         self.handler = None
         self.protocol = None
-        self.ignore_cert_errors = ignore_cert_errors
         self.connected = False
 
     def __enter__(self):
@@ -99,9 +68,7 @@ class CertMonitor:
                 self.port,
             )
 
-        connection_result = self.handler.connect(
-            ignore_cert_errors=self.ignore_cert_errors
-        )
+        connection_result = self.handler.connect()
         if connection_result is not None:  # This means there was an error
             return connection_result
 
@@ -116,12 +83,7 @@ class CertMonitor:
         self.handler = None
 
     def detect_protocol(self):
-        """Detect the protocol used by the host.
-
-        Returns:
-            str: The detected protocol ('ssl' or 'ssh').
-            dict: An error message if detection fails.
-        """
+        """Detect the protocol used by the host."""
         try:
             with socket.create_connection((self.host, self.port), timeout=10) as sock:
                 sock.setblocking(False)
@@ -169,14 +131,7 @@ class CertMonitor:
                     )
 
     def _is_ip_address(self, host: str) -> bool:
-        """Check if the provided host is an IP address.
-
-        Args:
-            host (str): The hostname or IP address to check.
-
-        Returns:
-            bool: True if the host is an IP address, False otherwise.
-        """
+        """Check if the provided host is an IP address."""
         try:
             ipaddress.ip_address(host)
             return True
@@ -202,12 +157,7 @@ class CertMonitor:
         return cert_dict
 
     def _fetch_raw_cipher(self) -> tuple:
-        """Fetch the raw cipher information.
-
-        Returns:
-            tuple: The raw cipher information.
-            dict: An error message if fetching fails.
-        """
+        """Fetch the raw cipher information."""
         self._ensure_connection()
         if self.protocol != "ssl":
             return self.error_handler.handle_error(
@@ -217,82 +167,6 @@ class CertMonitor:
                 self.port,
             )
         return self.handler.fetch_raw_cipher()
-
-    def _to_dict_hostname(self, data) -> dict:
-        """Convert the certificate data obtained via hostname into a structured dictionary format.
-
-        Args:
-            data (dict): The certificate data.
-
-        Returns:
-            dict: A dictionary containing the structured certificate data.
-        """
-
-        def _handle_duplicate_keys(data):
-            result = {}
-            for key, value in data:
-                if key in result:
-                    if not isinstance(result[key], list):
-                        result[key] = [result[key]]
-                    result[key].append(self._to_dict_hostname(value))
-                else:
-                    result[key] = self._to_dict_hostname(value)
-            return result
-
-        if isinstance(data, (tuple, list)):
-            if all(isinstance(item, tuple) and len(item) == 2 for item in data):
-                return _handle_duplicate_keys(data)
-            return [self._to_dict_hostname(item) for item in data]
-        elif isinstance(data, dict):
-            result = {}
-            for key, value in data.items():
-                if key in ["subject", "issuer"]:
-                    result[key] = _handle_duplicate_keys(
-                        [item for sublist in value for item in sublist]
-                    )
-                else:
-                    result[key] = self._to_dict_hostname(value)
-            return result
-        else:
-            return data
-
-    def _to_dict_ip(self, data) -> dict:
-        """Convert the certificate data obtained via IP address into a structured dictionary format.
-
-        Args:
-            data (dict): The certificate data.
-
-        Returns:
-            dict: A dictionary containing the structured certificate data.
-        """
-
-        def _handle_duplicate_keys(data):
-            result = {}
-            for key, value in data:
-                if key in result:
-                    if not isinstance(result[key], list):
-                        result[key] = [result[key]]
-                    result[key].append(self._to_dict_ip(value))
-                else:
-                    result[key] = self._to_dict_ip(value)
-            return result
-
-        if isinstance(data, (tuple, list)):
-            if all(isinstance(item, tuple) and len(item) == 2 for item in data):
-                return _handle_duplicate_keys(data)
-            return [self._to_dict_ip(item) for item in data]
-        elif isinstance(data, dict):
-            result = {}
-            for key, value in data.items():
-                if key in ["subject", "issuer"]:
-                    result[key] = _handle_duplicate_keys(
-                        [item for sublist in value for item in sublist]
-                    )
-                else:
-                    result[key] = self._to_dict_ip(value)
-            return result
-        else:
-            return data
 
     def _parse_pem_cert(self, pem_cert: str) -> dict:
         """Parse a PEM formatted certificate to extract relevant details."""
@@ -308,6 +182,44 @@ class CertMonitor:
 
         return cert_details
 
+    def _to_structured_dict(self, data) -> dict:
+        """Convert the certificate data into a structured dictionary format.
+
+        Args:
+            data (dict): The certificate data.
+
+        Returns:
+            dict: A dictionary containing the structured certificate data.
+        """
+
+        def _handle_duplicate_keys(data):
+            result = {}
+            for key, value in data:
+                if key in result:
+                    if not isinstance(result[key], list):
+                        result[key] = [result[key]]
+                    result[key].append(self._to_structured_dict(value))
+                else:
+                    result[key] = self._to_structured_dict(value)
+            return result
+
+        if isinstance(data, (tuple, list)):
+            if all(isinstance(item, tuple) and len(item) == 2 for item in data):
+                return _handle_duplicate_keys(data)
+            return [self._to_structured_dict(item) for item in data]
+        elif isinstance(data, dict):
+            result = {}
+            for key, value in data.items():
+                if key in ["subject", "issuer"]:
+                    result[key] = _handle_duplicate_keys(
+                        [item for sublist in value for item in sublist]
+                    )
+                else:
+                    result[key] = self._to_structured_dict(value)
+            return result
+        else:
+            return data
+
     def get_cert_info(self) -> Dict[str, Any]:
         """Retrieves and structures the certificate details."""
         if not self.cert_info:
@@ -319,22 +231,9 @@ class CertMonitor:
                     logging.error(f"Error in fetching raw certificate: {cert}")
                     return cert
 
-                if self.protocol == "ssl":
-                    if self.is_ip:
-                        self.cert_info = self._to_dict_ip(cert)
-                    else:
-                        self.cert_info = self._to_dict_hostname(cert)
-                elif self.protocol == "ssh":
-                    self.cert_info = cert  # SSH info is already structured
-                else:
-                    return self.error_handler.handle_error(
-                        "ProtocolError",
-                        f"Unsupported protocol: {self.protocol}",
-                        self.host,
-                        self.port,
-                    )
+                self.cert_info = self._to_structured_dict(cert)
 
-                logging.debug(f"Certificate info retrieved and structured")
+                logging.debug("Certificate info retrieved and structured")
             except Exception as e:
                 logging.exception("Error while getting certificate info")
                 return self.error_handler.handle_error(
@@ -344,12 +243,7 @@ class CertMonitor:
         return self.cert_info
 
     def get_raw_der(self) -> bytes:
-        """Return the raw DER format of the certificate.
-
-        Returns:
-            bytes: The DER format of the certificate.
-            dict: An error message if retrieval fails.
-        """
+        """Return the raw DER format of the certificate."""
         if self.protocol != "ssl":
             return self.error_handler.handle_error(
                 "ProtocolError",
@@ -368,12 +262,7 @@ class CertMonitor:
             )
 
     def get_raw_pem(self) -> str:
-        """Return the raw PEM format of the certificate.
-
-        Returns:
-            str: The PEM format of the certificate.
-            dict: An error message if retrieval fails.
-        """
+        """Return the raw PEM format of the certificate."""
         if self.protocol != "ssl":
             return self.error_handler.handle_error(
                 "ProtocolError",
@@ -393,11 +282,7 @@ class CertMonitor:
             )
 
     def get_cipher_info(self) -> dict:
-        """Retrieve and structure the cipher information of the SSL/TLS connection.
-
-        Returns:
-            dict: A dictionary containing structured cipher information.
-        """
+        """Retrieve and structure the cipher information of the SSL/TLS connection."""
         raw_cipher = self._fetch_raw_cipher()
 
         # Check if raw_cipher is an error response
