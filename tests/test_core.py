@@ -1,6 +1,8 @@
 import socket
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from certmonitor import CertMonitor
 
 
@@ -54,30 +56,26 @@ def test_validate_with_args(cert_monitor, sample_cert):
 def test_get_raw_der(cert_monitor):
     mock_der = b"mock der data"
     cert_monitor.der = mock_der
-    assert cert_monitor.get_raw_der() == mock_der
+    cert_monitor.handler.fetch_raw_cert.return_value = {"der": mock_der}
+
+    with patch.object(cert_monitor, "_ensure_connection"):
+        assert cert_monitor.get_raw_der() == mock_der
 
 
 def test_get_raw_pem(cert_monitor):
     mock_pem = "-----BEGIN CERTIFICATE-----\nmock pem data\n-----END CERTIFICATE-----\n"
     cert_monitor.pem = mock_pem
-    assert cert_monitor.get_raw_pem() == mock_pem
+    cert_monitor.handler.fetch_raw_cert.return_value = {"pem": mock_pem}
+
+    with patch.object(cert_monitor, "_ensure_connection"):
+        assert cert_monitor.get_raw_pem() == mock_pem
 
 
 def test_fetch_cert_error(cert_monitor):
-    # Set the protocol to 'ssl'
-    cert_monitor.protocol = "ssl"
+    cert_monitor.handler.fetch_raw_cert.side_effect = socket.error("Connection failed")
 
-    # Mock the _ensure_connection method to do nothing
     with patch.object(cert_monitor, "_ensure_connection"):
-        # Mock the ssl_socket attribute
-        mock_ssl_socket = MagicMock()
-        mock_ssl_socket.getpeercert.side_effect = socket.error("Connection failed")
-        cert_monitor.ssl_socket = mock_ssl_socket
+        with pytest.raises(socket.error) as excinfo:
+            cert_monitor._fetch_raw_cert()
 
-        # Call the method we're testing
-        result = cert_monitor._fetch_raw_cert()
-
-    # Assert the result
-    assert "error" in result
-    assert result["error"] == "SocketError"
-    assert "Connection failed" in result["message"]
+    assert "Connection failed" in str(excinfo.value)
