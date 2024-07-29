@@ -244,10 +244,11 @@ class CertMonitor:
 
         self._ensure_connection()
 
-        try:
-            return self.handler.get_raw_der()
-        except Exception as e:
-            return self.error_handler.handle_error("CertificateError", str(e), self.host, self.port)
+        if self.der is None:
+            cert_data = self.handler.fetch_raw_cert()
+            self.der = cert_data.get("der")
+
+        return self.der
 
     def get_raw_pem(self) -> str:
         """Return the raw PEM format of the certificate."""
@@ -261,11 +262,11 @@ class CertMonitor:
 
         self._ensure_connection()
 
-        try:
-            der = self.handler.get_raw_der()
-            return ssl.DER_cert_to_PEM_cert(der)
-        except Exception as e:
-            return self.error_handler.handle_error("CertificateError", str(e), self.host, self.port)
+        if self.pem is None:
+            cert_data = self.handler.fetch_raw_cert()
+            self.pem = cert_data.get("pem")
+
+        return self.pem
 
     def get_cipher_info(self) -> dict:
         """Retrieve and structure the cipher information of the SSL/TLS connection."""
