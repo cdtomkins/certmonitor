@@ -2,6 +2,8 @@
 
 CertMonitor is a Python library for monitoring and retrieving SSL certificate details from a given host. It supports hostname and IP-based certificate retrieval and includes built-in validators to check various aspects of the certificate, such as subject alternative names (SANs) and expiration date.
 
+> Certmonitor has a guiding principle to be 100% python standard library compatibility, so it should work on any python environment without any additional dependencies. 
+
 ## Installation
 
 To install CertMonitor, you can use pip:
