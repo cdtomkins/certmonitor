@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "certmonitor"
 version = "0.1.0"
-description = "A simple package to parse web certificates"
+description = "A simple package to parse certificates"
 authors = ["Brad Haas <bradh11@gmail.com>"]
 license = "MIT"
 readme = "README.md"
