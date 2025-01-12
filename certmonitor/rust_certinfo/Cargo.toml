@@ -1,0 +1,13 @@
+[package]
+name = "certinfo"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "certinfo"
+# This is crucial for building a Python extension
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.18.0", features = ["extension-module"] }
+x509-parser = "0.16.0"
