@@ -1,9 +1,11 @@
+# validators/expiration.py
+
 import datetime
 
-from .base import BaseValidator
+from .base import BaseCertValidator
 
 
-class ExpirationValidator(BaseValidator):
+class ExpirationValidator(BaseCertValidator):
     """
     A validator for checking the expiration date of an SSL certificate.
 
@@ -27,7 +29,7 @@ class ExpirationValidator(BaseValidator):
                   the number of days until expiry, the expiration date, and any warnings.
         """
         now = datetime.datetime.utcnow()
-        not_after = datetime.datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y GMT")
+        not_after = datetime.datetime.strptime(cert["cert_info"]["notAfter"], "%b %d %H:%M:%S %Y GMT")
 
         is_valid = now < not_after
         days_to_expiry = (not_after - now).days

@@ -1,3 +1,5 @@
+# validators/base.py
+
 from abc import ABC, abstractmethod
 
 
@@ -29,3 +31,19 @@ class BaseValidator(ABC):
         Returns:
             dict: The validation result.
         """
+
+
+class BaseCertValidator(BaseValidator):
+    validator_type = "cert"
+
+    def validate(self, cert_info, host, port):
+        # cert validation logic
+        pass
+
+
+class BaseCipherValidator(BaseValidator):
+    validator_type = "cipher"
+
+    def validate(self, cipher_info, host, port):
+        # cipher validation logic
+        pass

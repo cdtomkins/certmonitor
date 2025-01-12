@@ -1,7 +1,9 @@
-from .base import BaseValidator
+# validators/hostname.py
+
+from .base import BaseCertValidator
 
 
-class HostnameValidator(BaseValidator):
+class HostnameValidator(BaseCertValidator):
     """
     A validator for checking the hostname in an SSL certificate.
 
@@ -24,17 +26,17 @@ class HostnameValidator(BaseValidator):
             dict: A dictionary containing the validation results, including whether the hostname is valid,
                   the reason for validation failure, and the alternative names (SANs) in the certificate.
         """
-        common_name = self._get_common_name(cert)
+        common_name = self._get_common_name(cert["cert_info"])
         if common_name and self._matches_hostname(host, [common_name]):
             return {"is_valid": True, "matched_name": common_name, "alt_names": []}
 
-        if "subjectAltName" not in cert:
+        if "subjectAltName" not in cert["cert_info"]:
             return {
                 "is_valid": False,
                 "reason": "Certificate does not contain a Subject Alternative Name extension",
             }
 
-        sans = cert["subjectAltName"]
+        sans = cert["cert_info"]["subjectAltName"]
 
         # Ensure sans is a list of DNS names
         if isinstance(sans, dict):

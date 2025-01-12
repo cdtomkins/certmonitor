@@ -1,8 +1,10 @@
-from .base import BaseValidator
+# validators/key_info.py
+
+from .base import BaseCertValidator
 
 
 # TODO: Implement the KeyInfoValidator - work in progress
-class KeyInfoValidator(BaseValidator):
+class KeyInfoValidator(BaseCertValidator):
     """
     A validator for checking the key information of an SSL certificate.
 

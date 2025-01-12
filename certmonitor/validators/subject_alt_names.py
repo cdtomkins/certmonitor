@@ -1,9 +1,11 @@
+# validators/subject_alt_names.py
+
 import ipaddress
 
-from .base import BaseValidator
+from .base import BaseCertValidator
 
 
-class SubjectAltNamesValidator(BaseValidator):
+class SubjectAltNamesValidator(BaseCertValidator):
     """A validator for checking the Subject Alternative Names (SANs) in an SSL certificate.
 
     This validator checks both DNS and IP Address SANs.
@@ -27,7 +29,7 @@ class SubjectAltNamesValidator(BaseValidator):
             dict: A dictionary containing the validation results, including whether the SANs are valid,
                   the SANs themselves, the count of SANs, and any warnings or reasons for validation failure.
         """
-        if "subjectAltName" not in cert:
+        if "subjectAltName" not in cert["cert_info"]:
             return {
                 "is_valid": False,
                 "reason": "Certificate does not contain a Subject Alternative Name extension",
@@ -35,9 +37,15 @@ class SubjectAltNamesValidator(BaseValidator):
                 "count": 0,
             }
 
-        sans = cert["subjectAltName"]
-        dns_sans = sans.get("DNS", [])
-        ip_sans = sans.get("IP Address", [])
+        raw_sans = cert["cert_info"]["subjectAltName"]
+
+        # Handle both dictionary and list formats
+        if isinstance(raw_sans, dict):
+            dns_sans = raw_sans.get("DNS", [])
+            ip_sans = raw_sans.get("IP Address", [])
+        else:  # Assume list of tuples format
+            dns_sans = [value for san_type, value in raw_sans if san_type == "DNS"]
+            ip_sans = [value for san_type, value in raw_sans if san_type == "IP Address"]
 
         result = {
             "is_valid": True,
@@ -103,17 +111,22 @@ class SubjectAltNamesValidator(BaseValidator):
         # Check if the name is an IP address
         try:
             ip = ipaddress.ip_address(name)
+            # Handle IP SANs as a list
+            ip_sans = [str(ipaddress.ip_address(ip_san)) for ip_san in ip_sans]
             if str(ip) in ip_sans:
                 return True, f"Exact match for IP {name} found in IP Address SANs"
-            return False, f"No match found for IP {name} in IP Address SANs"
+            return False, f"No match found for IP {name} in IP Address SANs: {ip_sans}"
         except ValueError:
             # Not an IP address, check DNS SANs
             if name in dns_sans:
                 return True, f"Exact match for {name} found in DNS SANs"
-            for san in dns_sans:
-                if self._matches_wildcard(name, san):
-                    return True, f"{name} matches wildcard SAN {san}"
-            return False, f"No match found for {name} in DNS SANs"
+
+            # Check all wildcard patterns
+            matching_wildcards = [san for san in dns_sans if self._matches_wildcard(name, san)]
+            if matching_wildcards:
+                return True, f"{name} matches wildcard SAN(s): {', '.join(matching_wildcards)}"
+
+            return False, f"No match found for {name} in DNS SANs: {dns_sans}"
 
     def _matches_wildcard(self, hostname, pattern):
         """Checks if the given hostname matches a wildcard pattern.

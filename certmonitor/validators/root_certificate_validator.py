@@ -1,7 +1,9 @@
-from .base import BaseValidator
+# validators/root_certificate_validator.py
+
+from .base import BaseCertValidator
 
 
-class RootCertificateValidator(BaseValidator):
+class RootCertificateValidator(BaseCertValidator):
     """
     A validator for checking if the SSL certificate is issued by a trusted root CA.
 
