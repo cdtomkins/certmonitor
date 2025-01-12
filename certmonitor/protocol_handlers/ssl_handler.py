@@ -1,3 +1,5 @@
+# protocol_handlers/ssl_handler.py
+
 import logging
 import socket
 import ssl
@@ -81,7 +83,7 @@ class SSLHandler(BaseProtocolHandler):
         try:
             cert = self.secure_socket.getpeercert(binary_form=True)
             return {
-                "cert_dict": self.secure_socket.getpeercert(),
+                "cert_info": self.secure_socket.getpeercert(),
                 "der": cert,
                 "pem": ssl.DER_cert_to_PEM_cert(cert),
             }

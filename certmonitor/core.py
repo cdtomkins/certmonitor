@@ -1,3 +1,5 @@
+# core.py
+
 import ipaddress
 import logging
 import os
@@ -6,12 +8,14 @@ import ssl
 import tempfile
 from typing import Any, Dict, Optional
 
+import certinfo
+
 from certmonitor import config
 from certmonitor.cipher_algorithms import parse_cipher_suite
 from certmonitor.error_handlers import ErrorHandler
 from certmonitor.protocol_handlers.ssh_handler import SSHHandler
 from certmonitor.protocol_handlers.ssl_handler import SSLHandler
-from certmonitor.validators import get_validators
+from certmonitor.validators import VALIDATORS
 
 
 class CertMonitor:
@@ -30,7 +34,7 @@ class CertMonitor:
         self.der = None
         self.pem = None
         self.cert_info = None
-        self.validators = get_validators()
+        self.validators = VALIDATORS
         self.enabled_validators = enabled_validators or config.ENABLED_VALIDATORS
         self.error_handler = ErrorHandler()
         self.handler = None
@@ -140,15 +144,32 @@ class CertMonitor:
         if isinstance(cert_data, dict) and "error" in cert_data:
             return cert_data
 
-        cert_dict = cert_data["cert_dict"]
+        cert_info = cert_data["cert_info"]
         self.der = cert_data["der"]
         self.pem = cert_data["pem"]
+        self.public_key_info = {}
 
-        if not cert_dict:
+        if not cert_info:
             # If getpeercert() returns an empty dict, we'll parse the cert ourselves
-            cert_dict = self._parse_pem_cert(self.pem)
+            cert_data["cert_info"] = self._parse_pem_cert(self.pem)
 
-        return cert_dict
+        if self.der:
+            try:
+                # parse_public_key_info expects DER bytes and returns e.g.
+                # {"algorithm": "rsaEncryption", "size": 2048, "curve": None}
+                pubkey = certinfo.parse_public_key_info(self.der)
+                cert_data["public_key_info"] = pubkey
+                self.public_key_info = pubkey
+            except Exception as e:
+                logging.error(f"Unable to parse public key info: {e}")
+                # If you want, store a partial or error object here instead
+                cert_data["public_key_info"] = {"error": f"Failed to parse public key info: {e}"}
+        else:
+            # If there's no DER, we can't parse the public key
+            cert_data["public_key_info"] = {"error": "DER bytes not available"}
+
+        self.cert_data = cert_data
+        return cert_data
 
     def _fetch_raw_cipher(self) -> tuple:
         """Fetch the raw cipher information."""
@@ -223,8 +244,8 @@ class CertMonitor:
                     logging.error(f"Error in fetching raw certificate: {cert}")
                     return cert
 
-                self.cert_info = self._to_structured_dict(cert)
-
+                self.cert_data["cert_info"] = self._to_structured_dict(cert["cert_info"])
+                self.cert_info = self.cert_data["cert_info"]
                 logging.debug("Certificate info retrieved and structured")
             except Exception as e:
                 logging.exception("Error while getting certificate info")
@@ -306,28 +327,85 @@ class CertMonitor:
 
     def validate(self, validator_args=None) -> dict:
         """
-        Validates the certificate using the enabled validators.
+        Validates the target host by running all enabled validators.
+
+        This method:
+        1. Checks if all requested validators are implemented.
+        2. Separates validators into cert-based and cipher-based groups.
+        3. Fetches cert_info and cipher_info as needed.
+        4. Runs each validator with the appropriate arguments.
+        5. Returns a dictionary of validation results.
 
         Args:
-            validator_args (dict, optional): Additional arguments for specific validators. Defaults to None.
+            validator_args (dict, optional): Additional arguments for specific validators.
+                Example:
+                {
+                    "subject_alt_names": ["example.com", "test.com"]
+                }
 
         Returns:
-            dict: Validation results for each validator.
-        """
-        if not self.cert_info or "error" in self.cert_info:
-            print(
-                f"Skipping validation due to error in certificate retrieval: {self.cert_info.get('error', 'Unknown error')}"
-            )
-            return None
+            dict: A dictionary keyed by validator name, each value being the result of that validator.
 
+        Example:
+            results = monitor.validate()
+            print(results["expiration"])      # Output for expiration validator
+            print(results["weak_cipher"])     # Output for weak cipher validator
+        """
         results = {}
-        for validator in self.validators:
-            if validator.name in self.enabled_validators:
-                args = [self.cert_info, self.host, self.port]
-                if validator_args and validator.name in validator_args:
-                    if validator.name == "subject_alt_names":
-                        args.append(validator_args[validator.name])  # Pass the list directly
-                    else:
+
+        # Check for unknown validators
+        for requested_validator in self.enabled_validators:
+            if requested_validator not in self.validators:
+                results[requested_validator] = {
+                    "is_valid": False,
+                    "reason": f"Validator '{requested_validator}' is not implemented.",
+                }
+
+        cert_validators = [
+            validator
+            for name, validator in self.validators.items()
+            if name in self.enabled_validators
+            and getattr(validator, "validator_type", "cert") == "cert"
+            and name not in results  # exclude already marked unknown validators
+        ]
+
+        cipher_validators = [
+            validator
+            for name, validator in self.validators.items()
+            if name in self.enabled_validators
+            and getattr(validator, "validator_type", "cert") == "cipher"
+            and name not in results
+        ]
+
+        # Certificate-based validations
+        if cert_validators:
+            cert_data = self.cert_data
+            if not cert_data or "error" in cert_data:
+                logging.error("Skipping certificate-based validations due to cert retrieval error.")
+            else:
+                for validator in cert_validators:
+                    args = [cert_data, self.host, self.port]
+                    # Pass additional arguments if any
+                    if validator_args and validator.name in validator_args:
+                        if validator.name == "subject_alt_names":
+                            args.append(validator_args[validator.name])
+                        else:
+                            args.extend(validator_args[validator.name])
+
+                    results[validator.name] = validator.validate(*args)
+
+        # Cipher-based validations
+        if cipher_validators:
+            cipher_info = self.get_cipher_info()
+            if isinstance(cipher_info, dict) and "error" in cipher_info:
+                logging.error("Skipping cipher-based validations due to cipher info retrieval error.")
+            else:
+                for validator in cipher_validators:
+                    args = [cipher_info, self.host, self.port]
+                    # Pass additional arguments if any
+                    if validator_args and validator.name in validator_args:
                         args.extend(validator_args[validator.name])
-                results[validator.name] = validator.validate(*args)
+
+                    results[validator.name] = validator.validate(*args)
+
         return results

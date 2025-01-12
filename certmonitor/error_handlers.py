@@ -1,3 +1,6 @@
+# error_handlers.py
+
+
 class ErrorHandler:
     """
     Class for handling errors in a flexible manner.
