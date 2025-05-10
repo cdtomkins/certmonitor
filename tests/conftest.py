@@ -25,7 +25,7 @@ def sample_cert():
         "version": 3,
         "serialNumber": "075BCEF30689C8ADDF13E51AF4AFE187",
         "notBefore": "Jan 30 00:00:00 2024 GMT",
-        "notAfter": "Mar  1 23:59:59 2025 GMT",
+        "notAfter": "Mar  1 23:59:59 2030 GMT",  # Set to a future date
         "subjectAltName": {
             "DNS": [
                 "www.example.org",
@@ -39,7 +39,9 @@ def sample_cert():
             ]
         },
         "OCSP": ["http://ocsp.digicert.com"],
-        "caIssuers": ["http://cacerts.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt"],
+        "caIssuers": [
+            "http://cacerts.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crt"
+        ],
         "crlDistributionPoints": [
             "http://crl3.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crl",
             "http://crl4.digicert.com/DigiCertGlobalG2TLSRSASHA2562020CA1-1.crl",

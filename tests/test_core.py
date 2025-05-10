@@ -36,23 +36,39 @@ def test_get_cert_info_ip():
 
 
 def test_validate(cert_monitor, sample_cert):
-    cert_monitor.cert_info = sample_cert
-    with patch.object(cert_monitor, "validators", [MagicMock(name="mock_validator")]):
-        cert_monitor.validators[0].name = "mock_validator"
+    cert_monitor.cert_info = sample_cert  # Not wrapped
+    cert_monitor.cert_data = {"cert_info": sample_cert}  # Needed for validate()
+    mock_validator = MagicMock(name="mock_validator")
+    mock_validator.name = "mock_validator"
+    mock_validator.validator_type = "cert"
+    mock_validator.validate.return_value = {"is_valid": True}
+    with patch.object(cert_monitor, "validators", {"mock_validator": mock_validator}):
         cert_monitor.enabled_validators = ["mock_validator"]
         result = cert_monitor.validate()
     assert "mock_validator" in result
 
 
 def test_validate_with_args(cert_monitor, sample_cert):
-    cert_monitor.cert_info = sample_cert
+    cert_monitor.cert_info = sample_cert  # Not wrapped
+    cert_monitor.cert_data = {"cert_info": sample_cert}  # Needed for validate()
     mock_validator = MagicMock(name="subject_alt_names")
     mock_validator.name = "subject_alt_names"
-    with patch.object(cert_monitor, "validators", [mock_validator]):
+    mock_validator.validator_type = "cert"
+    mock_validator.validate.return_value = {"is_valid": True}
+    with patch.object(
+        cert_monitor, "validators", {"subject_alt_names": mock_validator}
+    ):
         cert_monitor.enabled_validators = ["subject_alt_names"]
-        result = cert_monitor.validate(validator_args={"subject_alt_names": ["example.com"]})
+        result = cert_monitor.validate(
+            validator_args={"subject_alt_names": ["example.com"]}
+        )
     assert "subject_alt_names" in result
-    mock_validator.validate.assert_called_once_with(sample_cert, cert_monitor.host, cert_monitor.port, ["example.com"])
+    mock_validator.validate.assert_called_once_with(
+        {"cert_info": sample_cert},
+        cert_monitor.host,
+        cert_monitor.port,
+        ["example.com"],
+    )
 
 
 def test_get_raw_der(cert_monitor):
