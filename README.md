@@ -1,5 +1,14 @@
 # CertMonitor
 
+A robust, user-friendly, and dynamic certificate monitoring and validation tool for Python.
+
+---
+
+**Documentation:**
+
+- The full documentation is available at [https://certmonitor.readthedocs.io/](https://certmonitor.readthedocs.io/) (coming soon).
+- For development, usage, and API details, see the docs/ directory or the online docs above.
+
 CertMonitor is a Python library for monitoring and retrieving SSL certificate details from a given host. It supports hostname and IP-based certificate retrieval and includes built-in validators to check various aspects of the certificate, such as subject alternative names (SANs), expiration date, and more.
 
 > CertMonitor is built with a strict philosophy of using only the Python standard library—no third-party dependencies are required. This ensures maximum portability and reliability across all Python environments.

@@ -1,8 +1,9 @@
 site_name: CertMonitor Documentation
 site_description: Documentation for the CertMonitor library
 site_author: Brad Haas
-repo_url: https://github.com/yourusername/certmonitor
-repo_name: yourusername/certmonitor
+site_url: https://certmonitor.readthedocs.io/
+repo_url: https://github.com/bradh11/certmonitor
+repo_name: bradh11/certmonitor
 nav:
   - Home: index.md
   - Usage:
@@ -39,6 +40,7 @@ nav:
       - Protocol Handlers: reference/protocol_handlers.md
       - Error Handlers: reference/error_handlers.md
       - Cipher Algorithms: reference/cipher_algorithms.md
+  - Development: development.md
       
 theme:
   name: material
