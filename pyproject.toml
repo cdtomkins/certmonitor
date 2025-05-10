@@ -1,51 +1,26 @@
-[tool.poetry]
+[project]
 name = "certmonitor"
 version = "0.1.0"
 description = "A simple package to parse certificates"
-authors = ["Brad Haas <bradh11@gmail.com>"]
+authors = [
+    { name = "Brad Haas", email = "bradh11@gmail.com" }
+]
 license = "MIT"
 readme = "README.md"
+requires-python = ">=3.8,<3.12"
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+dependencies = []
+# No runtime dependencies; standard library only
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.5.2"
-requests = "^2.32.3"
-pytest = "^8.2.2"
-pytest-cov = "^5.0.0"
-pytest-mock = "^3.14.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.ruff]
-line-length = 120
-target-version = "py38"
-extend-exclude = [
-    # Exclusions if needed
+[dependency-groups]
+dev = [
+    "ruff>=0.5.2",
+    "requests>=2.32.3",
+    "pytest>=8.2.2",
+    "pytest-cov>=5.0.0",
+    "pytest-mock>=3.14.0",
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.18",
+    "mkdocstrings>=0.24.0",
+    "mkdocstrings-python>=1.7.5"
 ]
-
-[tool.ruff.lint]
-select = [
-    "DJ",  # flake8-django
-    "E",  # pycodestyle
-    "F",  # pyflakes
-    "I",  # isort
-    "PIE",  # flake8-pie
-    "RUF",  # ruff itself
-    "S",  # flake8-bandit
-    "W",  # pycodestyle
-]
-ignore = [
-    "E501",  # pycodestyle: line-too-long
-    "PIE808",  # unnecessary-range-start
-    "RUF012",  # mutable-class-default - see https://github.com/astral-sh/ruff/issues/5243
-]
-
-[tool.ruff.lint.isort]
-combine-as-imports = true
-force-sort-within-sections = true
-known-local-folder = ["certmonitor"]
-order-by-type = false

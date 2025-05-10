@@ -25,6 +25,14 @@ class HostnameValidator(BaseCertValidator):
         Returns:
             dict: A dictionary containing the validation results, including whether the hostname is valid,
                   the reason for validation failure, and the alternative names (SANs) in the certificate.
+
+        Examples:
+            Example output:
+                {
+                  "is_valid": true,
+                  "matched_name": "example.com",
+                  "alt_names": ["example.com", "www.example.com"]
+                }
         """
         common_name = self._get_common_name(cert["cert_info"])
         if common_name and self._matches_hostname(host, [common_name]):

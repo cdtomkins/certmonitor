@@ -12,6 +12,24 @@ class WeakCipherValidator(BaseCipherValidator):
     name = "weak_cipher"
 
     def validate(self, cipher_info, host, port):
+        """
+        Validates that the negotiated cipher suite is in the allowed list.
+
+        Args:
+            cipher_info (dict): The cipher information.
+            host (str): The hostname.
+            port (int): The port number.
+
+        Returns:
+            dict: A dictionary containing the validation results, including whether the cipher suite is allowed.
+
+        Examples:
+            Example output:
+                {
+                  "is_valid": true,
+                  "cipher_suite": "ECDHE-RSA-AES128-GCM-SHA256"
+                }
+        """
         cipher_suite = cipher_info.get("cipher_suite", {})
         cipher_name = cipher_suite.get("name")
 

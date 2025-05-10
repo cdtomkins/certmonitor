@@ -26,6 +26,15 @@ class KeyInfoValidator(BaseCertValidator):
         Returns:
             dict: A dictionary containing the validation results, including key type, key size,
                   whether the key is considered strong enough, and curve information if applicable.
+
+        Examples:
+            Example output:
+                {
+                  "key_type": "rsaEncryption",
+                  "key_size": 2048,
+                  "is_valid": true,
+                  "curve": null
+                }
         """
         public_key_info = cert.get("public_key_info", {})
         if not public_key_info:

@@ -25,6 +25,17 @@ class RootCertificateValidator(BaseCertValidator):
         Returns:
             dict: A dictionary containing the validation results, including whether the certificate is valid,
                   and any warnings or reasons for validation failure.
+
+        Examples:
+            Example output:
+                {
+                  "is_valid": true,
+                  "issuer": {
+                    "commonName": "DigiCert Global G2 TLS RSA SHA256 2020 CA1",
+                    "organizationName": "DigiCert Inc"
+                  },
+                  "warnings": []
+                }
         """
         issuer = cert.get("issuer", {})
         subject = cert.get("subject", {})
@@ -42,7 +53,10 @@ class RootCertificateValidator(BaseCertValidator):
         is_trusted = (
             (has_ocsp and has_ca_issuers)
             and not is_self_signed
-            and ("untrusted" not in common_name.lower() and "untrusted" not in organization_name.lower())
+            and (
+                "untrusted" not in common_name.lower()
+                and "untrusted" not in organization_name.lower()
+            )
         )
 
         warnings = []
@@ -53,7 +67,9 @@ class RootCertificateValidator(BaseCertValidator):
         if is_self_signed:
             warnings.append("Certificate is self-signed.")
         if not is_trusted:
-            warnings.append(f"The certificate is issued by an untrusted root CA: {organization_name} ({common_name})")
+            warnings.append(
+                f"The certificate is issued by an untrusted root CA: {organization_name} ({common_name})"
+            )
 
         return {
             "is_valid": is_trusted,

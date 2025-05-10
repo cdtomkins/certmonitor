@@ -1,0 +1,107 @@
+site_name: CertMonitor Documentation
+site_description: Documentation for the CertMonitor library
+site_author: Brad Haas
+repo_url: https://github.com/yourusername/certmonitor
+repo_name: yourusername/certmonitor
+nav:
+  - Home: index.md
+  - Usage:
+      - Overview: usage/index.md
+      - Installation: usage/installation.md
+      - Basic Usage: usage/basic.md
+      - Using IP Addresses: usage/ip.md
+      - Context Manager vs Manual Close: usage/context_manager.md
+      - Enabling/Disabling Validators: usage/validators.md
+      - Passing Arguments to Validators: usage/validator_args.md
+      - Retrieving Raw Certificate Data: usage/raw_cert.md
+      - Retrieving Cipher Information: usage/cipher.md
+      - Error Handling: usage/error_handling.md
+      - Full Workflow Example: usage/full_workflow.md
+      - Environment Variable Configuration: usage/env.md
+      - Protocol Detection: usage/protocol.md
+      - Troubleshooting: usage/troubleshooting.md
+      - Custom Validators: usage/custom_validators.md
+      - Performance Tips: usage/performance.md
+      - FAQ: usage/faq.md
+  - Validators:
+      - Overview: validators/index.md
+      - Expiration: validators/expiration.md
+      - Hostname: validators/hostname.md
+      - SubjectAltNames: validators/subject_alt_names.md
+      - RootCertificate: validators/root_certificate.md
+      - KeyInfo: validators/key_info.md
+      - TLSVersion: validators/tls_version.md
+      - WeakCipher: validators/weak_cipher.md
+  - API Reference:
+      - CertMonitor: reference/certmonitor.md
+      - Validators: reference/validators.md
+      - Utils: reference/utils.md
+      - Protocol Handlers: reference/protocol_handlers.md
+      - Error Handlers: reference/error_handlers.md
+      - Cipher Algorithms: reference/cipher_algorithms.md
+      
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: blue
+      accent: light blue
+    - scheme: slate
+      primary: blue
+      accent: light blue
+  font:
+    text: Roboto
+    code: Roboto Mono
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            docstring_style: google
+            merge_init_into_class: true
+            show_root_heading: true
+            show_signature_annotations: true
+            separate_signature: true
+            show_if_no_docstring: true
+            show_docstring_examples: true
+            show_docstring_parameters: true
+            show_docstring_return: true
+            show_docstring_raises: true
+            show_docstring_attributes: true
+            show_docstring_classes: true
+            show_docstring_modules: true
+            show_docstring_inheritance: true
+            show_docstring_bases: true
+            show_docstring_submodules: true
+            show_docstring_private_members: false
+            show_docstring_special_members: false
+            show_docstring_module_summary: true
+            show_docstring_module_members: true
+            show_docstring_module_attributes: true
+            show_docstring_module_classes: true
+            show_docstring_module_functions: true
+            show_docstring_module_submodules: true
+            show_docstring_module_private_members: false
+            show_docstring_module_special_members: false
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
+serve:
+  dev_addr: 127.0.0.1:9000
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername/certmonitor
