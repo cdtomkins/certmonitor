@@ -11,8 +11,8 @@
   <strong>All orchestration and logic are pure Python standard library. Advanced public key parsing and elliptic curve support are powered by Rust. No third-party Python dependencies.</strong></em>
 </p>
 <p align="center">
-  <a href="https://github.com/bradh11/certmonitor/actions/workflows/test.yml" target="_blank">
-    <img src="https://github.com/bradh11/certmonitor/actions/workflows/test.yml/badge.svg" alt="Test Status">
+  <a href="https://github.com/bradh11/certmonitor/actions/workflows/ci.yml?query=branch%3Amain" target="_blank">
+    <img src="https://github.com/bradh11/certmonitor/actions/workflows/ci.yml/badge.svg?branch=main" alt="Test Status">
   </a>
   <a href="https://pypi.org/project/certmonitor" target="_blank">
     <img src="https://img.shields.io/pypi/v/certmonitor?color=%234FC3F7&label=pypi%20package" alt="PyPI version">
