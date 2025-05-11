@@ -45,6 +45,77 @@ with CertMonitor("example.com") as monitor:
 
 ---
 
+## 🛠️ Example Output
+
+### Certificate Info
+
+This is a sample of the structured certificate info returned by `monitor.get_cert_info()`:
+
+```json
+{
+  "subject": {
+    "commonName": "example.com"
+  },
+  "issuer": {
+    "organizationName": "DigiCert Inc",
+    "commonName": "DigiCert TLS RSA SHA256 2020 CA1"
+  },
+  "notBefore": "2024-06-01T00:00:00",
+  "notAfter": "2025-09-01T23:59:59",
+  "serialNumber": "0A1B2C3D4E5F6789",
+  "subjectAltName": {
+    "DNS": ["example.com", "www.example.com"],
+    "IP Address": []
+  },
+  "publicKeyInfo": {
+    "algorithm": "rsaEncryption",
+    "size": 2048,
+    "curve": null
+  }
+}
+```
+
+### PEM Format
+
+This is a sample of the PEM format returned by `monitor.get_raw_pem()`:
+
+```pem
+-----BEGIN CERTIFICATE-----
+MIID...snip...IDAQAB
+-----END CERTIFICATE-----
+```
+
+### DER Format
+
+This is a sample of the DER format returned by `monitor.get_raw_der()` (as bytes, shown here as base64):
+
+```text
+MIID...snip...IDAQAB
+```
+
+### Validation Results
+
+```json
+{
+  "expiration": {
+    "is_valid": true,
+    "days_to_expiry": 120,
+    "expires_on": "2025-09-01T23:59:59",
+    "warnings": []
+  },
+  "subject_alt_names": {
+    "is_valid": true,
+    "sans": {"DNS": ["example.com", "www.example.com"], "IP Address": []},
+    "count": 2,
+    "contains_host": {"name": "example.com", "is_valid": true, "reason": "Matched DNS SAN"},
+    "contains_alternate": {"www.example.com": {"name": "www.example.com", "is_valid": true, "reason": "Matched DNS SAN"}},
+    "warnings": []
+  }
+}
+```
+
+---
+
 ## ✨ Features
 
 - 🔒 **Zero Dependencies:** 100% standard library. No third-party Python packages required—ever.
