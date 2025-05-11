@@ -20,15 +20,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
-      - name: Create venv
-        run: |
-          uv venv .venv
-      - name: Set up venv PATH
-        run: |
-          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          uv sync -G dev
+          uv sync --group dev
       - name: Check formatting
         run: |
           ruff format --check .
@@ -77,15 +71,9 @@ jobs:
           python-version: "3.11"
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
-      - name: Create venv
-        run: |
-          uv venv .venv
-      - name: Set up venv PATH
-        run: |
-          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install build dependencies
         run: |
-          uv sync -G dev
+          uv sync --group dev
           uv pip install build twine
       - name: Build package
         run: |
