@@ -18,12 +18,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Rust toolchain (for advanced crypto)
-        uses: dtolnay/rust-toolchain@stable
-      - name: Install uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+      - name: Create venv
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv
+      - name: Set up venv PATH
+        run: |
+          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           uv sync --group dev
@@ -48,10 +50,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+      - name: Create venv
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv
+      - name: Set up venv PATH
+        run: |
+          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           uv sync --group docs
@@ -69,10 +75,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install uv
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+      - name: Create venv
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
+          uv venv .venv
+      - name: Set up venv PATH
+        run: |
+          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install build dependencies
         run: |
           uv sync --group dev
