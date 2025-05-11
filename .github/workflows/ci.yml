@@ -33,12 +33,9 @@ jobs:
       - name: Lint
         run: |
           uv run ruff check .
-      - name: Build Rust extension
-        run: |
-          make maturin-build
       - name: Install Rust extension
         run: |
-          make maturin-develop
+          make develop
       - name: Run tests
         run: |
           uv run pytest --maxfail=2 --disable-warnings
@@ -93,10 +90,7 @@ jobs:
           uv sync --group dev
       - name: Build Rust extension
         run: |
-          make maturin-build
-      - name: Build Python package
-        run: |
-          uv build
+          make wheel
       - name: Publish to PyPI
         env:
           UV_PUBLISH_NO_TRUSTED: "1"
