@@ -8,7 +8,7 @@ import ssl
 import tempfile
 from typing import Any, Dict, Optional
 
-import certinfo
+from certmonitor import certinfo
 
 from certmonitor import config
 from certmonitor.cipher_algorithms import parse_cipher_suite
