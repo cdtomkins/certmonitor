@@ -14,7 +14,7 @@ maturin-build:
 
 test:
 	uv pip install -e .
-	pytest
+	pytest -v
 
 docs:
 	mkdocs serve
