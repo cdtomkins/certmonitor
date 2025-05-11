@@ -28,7 +28,7 @@ jobs:
           echo ".venv/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          uv sync --group dev
+          uv sync -G dev
       - name: Check formatting
         run: |
           ruff format --check .
@@ -60,7 +60,7 @@ jobs:
           echo ".venv/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
-          uv sync --group docs
+          uv sync -G docs
       - name: Build docs
         run: |
           mkdocs build --strict
@@ -85,7 +85,7 @@ jobs:
           echo ".venv/bin" >> $GITHUB_PATH
       - name: Install build dependencies
         run: |
-          uv sync --group dev
+          uv sync -G dev
           uv pip install build twine
       - name: Build package
         run: |
