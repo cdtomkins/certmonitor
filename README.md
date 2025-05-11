@@ -1,5 +1,25 @@
 <p align="center">
-  <img src="docs/images/logo.svg" alt="CertMonitor Logo" width="120" height="120">
+  <a href="https://certmonitor.readthedocs.io/">
+    <img src="docs/images/logo.svg" alt="CertMonitor Logo" width="120" height="120">
+  </a>
+</p>
+<p align="center">
+  <em>Zero-dependency certificate monitoring and validation for Python. Native, portable, extensible, and secure.<br>
+  <strong>All standard library. Optional Rust for advanced crypto. No third-party Python dependencies.</strong></em>
+</p>
+<p align="center">
+  <a href="https://github.com/bradh11/certmonitor/actions?query=workflow%3ATest" target="_blank">
+    <img src="https://github.com/bradh11/certmonitor/actions/workflows/test.yml/badge.svg" alt="Test Status">
+  </a>
+  <a href="https://pypi.org/project/certmonitor" target="_blank">
+    <img src="https://img.shields.io/pypi/v/certmonitor?color=%234FC3F7&label=pypi%20package" alt="PyPI version">
+  </a>
+  <a href="https://pypi.org/project/certmonitor" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/certmonitor.svg?color=%234FC3F7" alt="Supported Python versions">
+  </a>
+  <a href="https://certmonitor.readthedocs.io/" target="_blank">
+    <img src="https://readthedocs.org/projects/certmonitor/badge/?version=latest" alt="ReadTheDocs">
+  </a>
 </p>
 
 # CertMonitor
