@@ -12,21 +12,9 @@ You can install CertMonitor using your preferred Python package manager. Below a
     uv pip install certmonitor
     ```
 
-If you want to install from a local clone:
+---
 
-=== "pip"
-    ```sh
-    git clone <repo-url>
-    cd certmonitor
-    pip install .
-    ```
-
-=== "uv"
-    ```sh
-    git clone <repo-url>
-    cd certmonitor
-    uv pip install .
-    ```
+> **Note:** If you want to install CertMonitor for development, build from source, or work with Rust bindings, see the [Development Guide](../development.md) for full instructions.
 
 ---
 

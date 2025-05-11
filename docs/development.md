@@ -1,33 +1,37 @@
 # Development Guide
 
-This project uses a combination of Python and Rust to provide robust, high-performance certificate parsing and validation. Below you'll find instructions for setting up your development environment, running tests, and understanding why Rust is used for part of the codebase.
+This guide is for contributors and advanced users who want to build CertMonitor from source, work on the codebase, or use the Rust-powered features in development.
 
-## Setting Up Your Environment
+## Local Development Setup
 
-1. **Install Python (3.8–3.13 recommended)**
-2. **Install [uv](https://github.com/astral-sh/uv) for fast dependency management:**
-   - Official install (recommended, from the [uv docs](https://github.com/astral-sh/uv#installation)):
-     ```sh
-     curl -Ls https://astral.sh/uv/install.sh | sh
-     ```
-3. **Install Rust (for the Rust extension):**
-   - [Install Rust](https://www.rust-lang.org/tools/install) (includes `cargo`)
-4. **Install maturin (for building the Rust extension):**
-   ```sh
-   uv sync --group dev
-   ```
-5. **Install all Python dev dependencies:**
-   ```sh
-   uv sync --group dev
-   ```
-6. **Build the Rust extension:**
-   ```sh
-   make maturin-develop
-   ```
-   Or, for a full build (Python + Rust):
-   ```sh
-   make build
-   ```
+1. **Clone the repository:**
+    ```sh
+    git clone <repo-url>
+    cd certmonitor
+    ```
+2. **Install dev dependencies (includes maturin):**
+
+    === "uv"
+        ```sh
+        uv sync --group dev
+        ```
+
+    === "pip"
+        ```sh
+        pip install -e .[dev]
+        ```
+
+3. **Install Rust toolchain:**
+    ```sh
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    # Or see https://www.rust-lang.org/tools/install
+    ```
+4. **Build and install the Rust bindings:**
+    ```sh
+    make maturin-develop
+    ```
+
+---
 
 ## Running Tests
 
