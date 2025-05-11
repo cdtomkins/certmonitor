@@ -82,6 +82,12 @@ jobs:
         uses: astral-sh/setup-uv@v1
         with:
           version: "0.6.17"
+      - name: Create venv
+        run: |
+          uv venv .venv
+      - name: Add venv to PATH
+        run: |
+          echo ".venv/bin" >> $GITHUB_PATH
       - name: Install build dependencies
         run: |
           uv sync --group dev
