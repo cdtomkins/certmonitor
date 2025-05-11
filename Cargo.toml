@@ -7,6 +7,7 @@ edition = "2021"
 name = "certinfo"
 # This is crucial for building a Python extension
 crate-type = ["cdylib"]
+path = "rust_certinfo/src/lib.rs"
 
 [dependencies]
 pyo3 = { version = "0.18.0", features = ["extension-module"] }

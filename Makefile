@@ -1,37 +1,66 @@
 # Makefile for certmonitor project
 
-.PHONY: maturin-develop build maturin-build test docs clean lint format
+.PHONY: develop build wheel test docs clean lint format verify-wheel
 
-# Develop using maturin
-maturin-develop:
-	uv run maturin develop --manifest-path certmonitor/rust_certinfo/Cargo.toml
-
-# Build the project
-build:
+# Install the package in development mode (Python + Rust)
+develop:
 	uv pip install -e .
-	$(MAKE) maturin-develop
+	uv run maturin develop
 
-# Build using maturin
-maturin-build:
-	uv run maturin build --release --manifest-path certmonitor/rust_certinfo/Cargo.toml
+# Build the wheel (Python + Rust)
+wheel:
+	uv run maturin build --release
+
+# Full build
+build: develop
 
 # Run tests
 test:
 	uv pip install -e .
-	pytest -v
+	uv run pytest -v
 
 # Serve documentation
 docs:
-	mkdocs serve
+	uv run mkdocs serve
 
-# Clean build artifacts and caches
-clean:
-	rm -rf build/ dist/ .venv/ .mypy_cache/ .pytest_cache/ __pycache__ */__pycache__ *.egg-info
-
-# Lint code using ruff
+# Lint code
 lint:
 	uv run ruff check .
 
-# Format code using ruff
+# Format code
 format:
 	uv run ruff format .
+
+# Clean all build artifacts, cache, eggs, and venv
+clean:
+	rm -rf \
+		build/ \
+		dist/ \
+		target/ \
+		.mypy_cache/ \
+		.pytest_cache/ \
+		.venv/ \
+		certmonitor.egg-info/ \
+		__pycache__/ \
+		**/__pycache__/ \
+		*.egg-info \
+		*.pyc \
+		*.pyo \
+		*.pyd \
+		*.log \
+		.DS_Store \
+		*.so \
+		*.c \
+		*.o \
+		*.rlib \
+		*.rmeta \
+		*.dll \
+		*.dylib \
+		*.exe \
+		*.a \
+		*.out
+
+# Verify the contents of the built wheel
+verify-wheel:
+	@echo "🔍 Verifying wheel contents..."
+	unzip -l target/wheels/certmonitor-*.whl | grep certmonitor
