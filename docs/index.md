@@ -15,7 +15,7 @@
 - **Easy Certificate Retrieval**: Fetch and parse certificates from any host (domain or IP) with a single call.
 - **Pluggable Validators**: Built-in and custom validators for expiration, hostname, SANs, key strength, cipher, protocol version, and more.
 - **Rich API**: Access raw certificate data, cipher info, and validation results in structured Python objects or JSON.
-- **Rust-Powered Performance**: Fast, safe parsing of certificate internals via Rust bindings.
+- **Rust-Powered Performance**: Fast, safe parsing of certificate internals and public key extraction via Rust bindings. <strong>Rust is required for advanced public key and elliptic curve features, but all orchestration and logic are pure Python stdlib.</strong>
 - **Graceful Error Handling**: Robust to network failures, invalid hosts, and edge cases.
 - **Modern Python**: Async-ready, type-annotated, and compatible with Python 3.8+.
 - **Extensive Documentation**: Usage guides, API reference, and real-world examples.

@@ -20,11 +20,11 @@ Check the error message in the returned dictionary and try running with a differ
 
 ### Why does CertMonitor use only the Python standard library for cryptography?
 
-CertMonitor is designed for maximum portability, security, and maintainability. By relying exclusively on the Python standard library for cryptographic operations, we avoid the risks and complexity of third-party dependencies, reduce the attack surface, and ensure that CertMonitor works out-of-the-box in any Python environment.
+CertMonitor is designed for maximum portability, security, and maintainability. All orchestration and logic is pure Python stdlib, but robust certificate parsing and elliptic curve support are powered by Rust bindings. By relying on Rust for these critical operations, we ensure speed, safety, and correctness—while avoiding third-party Python dependencies.
 
 ### Will CertMonitor support more advanced cryptography or certificate parsing?
 
-Yes! For advanced or performance-critical cryptographic processing, CertMonitor is architected to support optional Rust bindings. This allows us to leverage the speed and safety of Rust for complex operations, while keeping the core tool lightweight and dependency-free for most users.
+Yes! For advanced or performance-critical cryptographic processing, CertMonitor is architected to leverage Rust bindings for public key parsing and elliptic curve support. This allows us to use the speed and safety of Rust for complex operations, while keeping the core tool lightweight and dependency-free for orchestration and logic.
 
 ### How does CertMonitor ensure high performance?
 
@@ -32,7 +32,7 @@ CertMonitor is optimized for speed and concurrency:
 - All network and certificate operations are designed to be fast and non-blocking.
 - The API supports asynchronous and parallel workflows (see the Performance Tips section for examples).
 - For large-scale or batch monitoring, CertMonitor can be run in highly concurrent environments with minimal overhead.
-- Future Rust integration will further accelerate heavy cryptographic workloads.
+- Future Rust integration will further accelerate heavy cryptographic workloads and expand advanced crypto support.
 
 ### Is CertMonitor secure?
 
@@ -40,7 +40,7 @@ Security is a top priority. CertMonitor:
 - Avoids third-party cryptography libraries unless absolutely necessary.
 - Uses secure defaults for all network and certificate operations.
 - Is designed to be auditable, with a small, readable codebase.
-- Will leverage Rust for critical-path cryptography to minimize memory safety risks.
+- Will leverage Rust for critical-path cryptography to minimize memory safety risks and enable advanced features.
 
 ### Can I extend CertMonitor with custom validators?
 
@@ -48,4 +48,4 @@ Absolutely! CertMonitor is built to be extensible. You can add your own validato
 
 ### What platforms does CertMonitor support?
 
-CertMonitor runs on any platform with Python 3.7+ and does not require any non-standard dependencies. Optional Rust bindings will be distributed as pre-built wheels for all major platforms.
+CertMonitor runs on any platform with Python 3.7+ and does not require any non-standard dependencies for orchestration or logic. Rust bindings are required for advanced public key and elliptic curve features, and will be distributed as pre-built wheels for all major platforms.

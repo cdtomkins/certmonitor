@@ -24,9 +24,9 @@ poetry add certmonitor
 
 - Python 3.8, 3.9, 3.10, 3.11, 3.12, 3.13
 
-## Optional: Rust Toolchain
+## Rust Toolchain (Required for Advanced Features)
 
-CertMonitor uses Rust bindings for fast certificate parsing. If you want to build from source or contribute, install Rust:
+CertMonitor uses Rust bindings for fast, safe certificate parsing and public key extraction. **Rust is required for advanced public key and elliptic curve features, but all orchestration and logic are pure Python stdlib.** If you want to build from source or contribute, install Rust:
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -34,7 +34,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 ## Troubleshooting Installation
 
-- If you see errors about maturin, Rust, or OpenSSL, ensure you have a working Rust toolchain and OpenSSL headers installed.
+- If you see errors about maturin, Rust, or OpenSSL, ensure you have a working Rust toolchain and OpenSSL headers installed. **Most CertMonitor features use only the Python standard library, but advanced cryptographic operations require Rust.**
 - On macOS, you may need to run:
   ```bash
   brew install openssl
