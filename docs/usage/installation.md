@@ -1,24 +1,34 @@
 # Installation
 
-CertMonitor supports Python 3.8–3.13 and requires a modern pip, uv, or poetry environment. It is cross-platform and works on Linux, macOS, and Windows (with OpenSSL support).
+You can install CertMonitor using your preferred Python package manager. Below are examples for both pip and uv:
 
-## Install from PyPI
+=== "pip"
+    ```sh
+    pip install certmonitor
+    ```
 
-```bash
-pip install certmonitor
-```
+=== "uv"
+    ```sh
+    uv pip install certmonitor
+    ```
 
-## Install with uv (recommended for speed)
+If you want to install from a local clone:
 
-```bash
-uv pip install certmonitor
-```
+=== "pip"
+    ```sh
+    git clone <repo-url>
+    cd certmonitor
+    pip install .
+    ```
 
-## Install with Poetry
+=== "uv"
+    ```sh
+    git clone <repo-url>
+    cd certmonitor
+    uv pip install .
+    ```
 
-```bash
-poetry add certmonitor
-```
+---
 
 ## Supported Python Versions
 
