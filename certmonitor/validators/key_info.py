@@ -14,7 +14,7 @@ class KeyInfoValidator(BaseCertValidator):
 
     name = "key_info"
 
-    def validate(self, cert, host, port):
+    def validate(self, cert, host, port) -> dict:
         """
         Validates the key information of the provided SSL certificate.
 
@@ -28,13 +28,32 @@ class KeyInfoValidator(BaseCertValidator):
                   whether the key is considered strong enough, and curve information if applicable.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a certificate with a strong RSA 2048-bit key, so validation passes and no warnings are present.
+
+                ```json
                 {
-                  "key_type": "rsaEncryption",
-                  "key_size": 2048,
-                  "is_valid": true,
-                  "curve": null
+                    "key_type": "rsaEncryption",
+                    "key_size": 2048,
+                    "is_valid": true,
+                    "curve": null
                 }
+                ```
+
+            Example output (failure):
+                This example shows a certificate with a weak 512-bit key, so validation fails and a warning is included.
+
+                ```json
+                {
+                    "key_type": "rsaEncryption",
+                    "key_size": 512,
+                    "is_valid": false,
+                    "curve": null,
+                    "warnings": [
+                        "Key size 512 is considered weak."
+                    ]
+                }
+                ```
         """
         public_key_info = cert.get("public_key_info", {})
         if not public_key_info:

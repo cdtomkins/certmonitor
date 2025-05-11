@@ -110,14 +110,18 @@ class CertMonitor:
                 finally:
                     sock.setblocking(True)
         except Exception as e:
-            return self.error_handler.handle_error("ConnectionError", str(e), self.host, self.port)
+            return self.error_handler.handle_error(
+                "ConnectionError", str(e), self.host, self.port
+            )
 
     def _ensure_connection(self):
         """Ensures that a valid connection is established."""
         if not self.connected:
             connect_result = self.connect()
             if connect_result is not None:  # This means there was an error
-                raise ConnectionError(f"Failed to establish connection: {connect_result}")
+                raise ConnectionError(
+                    f"Failed to establish connection: {connect_result}"
+                )
         else:
             try:
                 self.handler.check_connection()
@@ -126,7 +130,9 @@ class CertMonitor:
                 self.connected = False
                 connect_result = self.connect()
                 if connect_result is not None:  # This means there was an error
-                    raise ConnectionError(f"Failed to re-establish connection: {connect_result}")
+                    raise ConnectionError(
+                        f"Failed to re-establish connection: {connect_result}"
+                    )
 
     def _is_ip_address(self, host: str) -> bool:
         """Check if the provided host is an IP address."""
@@ -163,7 +169,9 @@ class CertMonitor:
             except Exception as e:
                 logging.error(f"Unable to parse public key info: {e}")
                 # If you want, store a partial or error object here instead
-                cert_data["public_key_info"] = {"error": f"Failed to parse public key info: {e}"}
+                cert_data["public_key_info"] = {
+                    "error": f"Failed to parse public key info: {e}"
+                }
         else:
             # If there's no DER, we can't parse the public key
             cert_data["public_key_info"] = {"error": "DER bytes not available"}
@@ -226,7 +234,9 @@ class CertMonitor:
             result = {}
             for key, value in data.items():
                 if key in ["subject", "issuer"]:
-                    result[key] = _handle_duplicate_keys([item for sublist in value for item in sublist])
+                    result[key] = _handle_duplicate_keys(
+                        [item for sublist in value for item in sublist]
+                    )
                 else:
                     result[key] = self._to_structured_dict(value)
             return result
@@ -244,12 +254,16 @@ class CertMonitor:
                     logging.error(f"Error in fetching raw certificate: {cert}")
                     return cert
 
-                self.cert_data["cert_info"] = self._to_structured_dict(cert["cert_info"])
+                self.cert_data["cert_info"] = self._to_structured_dict(
+                    cert["cert_info"]
+                )
                 self.cert_info = self.cert_data["cert_info"]
                 logging.debug("Certificate info retrieved and structured")
             except Exception as e:
                 logging.exception("Error while getting certificate info")
-                return self.error_handler.handle_error("UnknownError", str(e), self.host, self.port)
+                return self.error_handler.handle_error(
+                    "UnknownError", str(e), self.host, self.port
+                )
 
         return self.cert_info
 
@@ -321,7 +335,9 @@ class CertMonitor:
                 "Not applicable (TLS 1.3 uses ephemeral key exchange by default)"
             )
         else:
-            result["cipher_suite"]["key_exchange_algorithm"] = parsed_cipher["key_exchange"]
+            result["cipher_suite"]["key_exchange_algorithm"] = parsed_cipher[
+                "key_exchange"
+            ]
 
         return result
 
@@ -379,9 +395,18 @@ class CertMonitor:
 
         # Certificate-based validations
         if cert_validators:
-            cert_data = self.cert_data
-            if not cert_data or "error" in cert_data:
-                logging.error("Skipping certificate-based validations due to cert retrieval error.")
+            cert_data = getattr(self, "cert_data", None)
+            if not cert_data or (isinstance(cert_data, dict) and "error" in cert_data):
+                error_reason = (
+                    cert_data["error"]
+                    if isinstance(cert_data, dict) and "error" in cert_data
+                    else "Certificate data is missing due to a connection or retrieval error."
+                )
+                for validator in cert_validators:
+                    results[validator.name] = {
+                        "is_valid": False,
+                        "reason": f"Certificate-based validation could not be performed: {error_reason}",
+                    }
             else:
                 for validator in cert_validators:
                     args = [cert_data, self.host, self.port]
@@ -398,7 +423,9 @@ class CertMonitor:
         if cipher_validators:
             cipher_info = self.get_cipher_info()
             if isinstance(cipher_info, dict) and "error" in cipher_info:
-                logging.error("Skipping cipher-based validations due to cipher info retrieval error.")
+                logging.error(
+                    "Skipping cipher-based validations due to cipher info retrieval error."
+                )
             else:
                 for validator in cipher_validators:
                     args = [cipher_info, self.host, self.port]

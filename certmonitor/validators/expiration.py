@@ -15,7 +15,7 @@ class ExpirationValidator(BaseCertValidator):
 
     name = "expiration"
 
-    def validate(self, cert, host, port):
+    def validate(self, cert, host, port) -> dict:
         """
         Validates the expiration date of the provided SSL certificate.
 
@@ -29,13 +29,31 @@ class ExpirationValidator(BaseCertValidator):
                   the number of days until expiry, the expiration date, and any warnings.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a certificate that is valid and has 120 days until expiration, so no warnings are present.
+
+                ```json
                 {
-                  "is_valid": true,
-                  "days_to_expiry": 120,
-                  "expires_on": "2025-09-01T23:59:59",
-                  "warnings": []
+                    "is_valid": true,
+                    "days_to_expiry": 120,
+                    "expires_on": "2025-09-01T23:59:59",
+                    "warnings": []
                 }
+                ```
+
+            Example output (failure):
+                This example shows a certificate that expired 10 days ago, so validation fails and a warning is included.
+
+                ```json
+                {
+                    "is_valid": false,
+                    "days_to_expiry": -10,
+                    "expires_on": "2025-04-30T23:59:59",
+                    "warnings": [
+                        "Certificate is expired and has been expired for (-10 days)"
+                    ]
+                }
+                ```
         """
         now = datetime.datetime.utcnow()
         not_after = datetime.datetime.strptime(

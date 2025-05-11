@@ -74,6 +74,16 @@ print(cipher_info)
 ## Validators
 CertMonitor includes several built-in validators to check various aspects of the SSL certificate and connection. You can enable or disable validators through the `enabled_validators` parameter when initializing the CertMonitor instance.
 
+CertMonitor uses a powerful system of **validators**—modular checks that automatically assess certificate health, security, and compliance. Validators can:
+
+- Detect expired or soon-to-expire certificates
+- Ensure hostnames and SANs match
+- Enforce strong key types and lengths
+- Require modern TLS versions and strong cipher suites
+- Allow you to add custom organization-specific checks
+
+You can enable, disable, or extend validators to fit your needs, making CertMonitor ideal for continuous monitoring, compliance automation, and proactive security.
+
 ### Available Validators
 - `expiration`: Validates that the certificate is not expired.
 - `hostname`: Validates that the hostname matches the certificate's subject alternative names (SANs).

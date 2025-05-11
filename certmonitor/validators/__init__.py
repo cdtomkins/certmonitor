@@ -35,7 +35,7 @@ def register_validator(validator_instance):
     VALIDATORS[name] = validator_instance
 
 
-def list_validators():
+def list_validators() -> list:
     """
     Lists all currently registered validators.
 
@@ -43,3 +43,14 @@ def list_validators():
         list: A list of validator names.
     """
     return list(VALIDATORS.keys())
+
+
+def get_enabled_validators() -> list:
+    """
+    Placeholder function for getting enabled validators.
+
+    Returns:
+        list: A list of enabled validator names.
+    """
+    # Implementation goes here
+    return []

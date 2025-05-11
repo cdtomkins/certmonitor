@@ -12,7 +12,7 @@ nav:
       - Basic Usage: usage/basic.md
       - Using IP Addresses: usage/ip.md
       - Context Manager vs Manual Close: usage/context_manager.md
-      - Enabling/Disabling Validators: usage/validators.md
+      - Certificate Validators: usage/validators.md
       - Passing Arguments to Validators: usage/validator_args.md
       - Retrieving Raw Certificate Data: usage/raw_cert.md
       - Retrieving Cipher Information: usage/cipher.md
@@ -21,7 +21,6 @@ nav:
       - Environment Variable Configuration: usage/env.md
       - Protocol Detection: usage/protocol.md
       - Troubleshooting: usage/troubleshooting.md
-      - Custom Validators: usage/custom_validators.md
       - Performance Tips: usage/performance.md
       - FAQ: usage/faq.md
   - Validators:
@@ -74,26 +73,11 @@ plugins:
             show_signature_annotations: true
             separate_signature: true
             show_if_no_docstring: true
-            show_docstring_examples: true
-            show_docstring_parameters: true
-            show_docstring_return: true
-            show_docstring_raises: true
-            show_docstring_attributes: true
-            show_docstring_classes: true
-            show_docstring_modules: true
-            show_docstring_inheritance: true
-            show_docstring_bases: true
-            show_docstring_submodules: true
-            show_docstring_private_members: false
-            show_docstring_special_members: false
-            show_docstring_module_summary: true
-            show_docstring_module_members: true
-            show_docstring_module_attributes: true
-            show_docstring_module_classes: true
-            show_docstring_module_functions: true
-            show_docstring_module_submodules: true
-            show_docstring_module_private_members: false
-            show_docstring_module_special_members: false
+            extra:
+              show_docstring_examples: true
+              show_docstring_parameters: true
+              show_docstring_return: true
+              show_docstring_raises: true
 markdown_extensions:
   - admonition
   - codehilite
@@ -101,8 +85,10 @@ markdown_extensions:
   - meta
   - toc:
       permalink: true
-serve:
-  dev_addr: 127.0.0.1:9000
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
 extra:
   social:
     - icon: fontawesome/brands/github

@@ -7,7 +7,7 @@ class ErrorHandler:
     """
 
     @staticmethod
-    def handle_error(error_type, message, host, port):
+    def handle_error(error_type: str, message: str, host: str, port: int) -> dict:
         """
         Handles errors encountered during certificate retrieval.
 

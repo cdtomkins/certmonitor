@@ -11,7 +11,7 @@ class WeakCipherValidator(BaseCipherValidator):
 
     name = "weak_cipher"
 
-    def validate(self, cipher_info, host, port):
+    def validate(self, cipher_info, host, port) -> dict:
         """
         Validates that the negotiated cipher suite is in the allowed list.
 
@@ -24,11 +24,26 @@ class WeakCipherValidator(BaseCipherValidator):
             dict: A dictionary containing the validation results, including whether the cipher suite is allowed.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a connection using a strong cipher suite, so validation passes.
+
+                ```json
                 {
-                  "is_valid": true,
-                  "cipher_suite": "ECDHE-RSA-AES128-GCM-SHA256"
+                    "is_valid": true,
+                    "cipher_suite": "ECDHE-RSA-AES128-GCM-SHA256"
                 }
+                ```
+
+            Example output (failure):
+                This example shows a connection using a weak cipher suite, so validation fails.
+
+                ```json
+                {
+                    "is_valid": false,
+                    "cipher_suite": "TLS_RSA_WITH_RC4_128_MD5",
+                    "reason": "Cipher suite TLS_RSA_WITH_RC4_128_MD5 is not allowed. Please update your allowed cipher suites or negotiate a supported cipher."
+                }
+                ```
         """
         cipher_suite = cipher_info.get("cipher_suite", {})
         cipher_name = cipher_suite.get("name")

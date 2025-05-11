@@ -16,7 +16,7 @@ class SubjectAltNamesValidator(BaseCertValidator):
 
     name = "subject_alt_names"
 
-    def validate(self, cert, host, port, alternate_names=None):
+    def validate(self, cert, host, port, alternate_names=None) -> dict:
         """
         Validates the SANs in the provided SSL certificate.
 
@@ -31,17 +31,67 @@ class SubjectAltNamesValidator(BaseCertValidator):
                   the SANs themselves, the count of SANs, and any warnings or reasons for validation failure.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a certificate where both the main host and an alternate name are present in the DNS SANs, so validation passes for both.
+
+                ```json
                 {
-                  "is_valid": true,
-                  "sans": {"DNS": ["example.com", "www.example.com"], "IP Address": []},
-                  "count": 2,
-                  "contains_host": {"name": "example.com", "is_valid": true, "reason": "Matched DNS SAN"},
-                  "contains_alternate": {
-                    "www.example.com": {"name": "www.example.com", "is_valid": true, "reason": "Matched DNS SAN"}
-                  },
-                  "warnings": []
+                    "is_valid": true,
+                    "sans": {
+                        "DNS": [
+                            "example.com",
+                            "www.example.com"
+                        ],
+                        "IP Address": []
+                    },
+                    "count": 2,
+                    "contains_host": {
+                        "name": "example.com",
+                        "is_valid": true,
+                        "reason": "Matched DNS SAN"
+                    },
+                    "contains_alternate": {
+                        "www.example.com": {
+                            "name": "www.example.com",
+                            "is_valid": true,
+                            "reason": "Matched DNS SAN"
+                        }
+                    },
+                    "warnings": []
                 }
+                ```
+
+            Example output (failure):
+                This example shows a certificate where neither the main host nor the alternate name are present in the DNS SANs, so validation fails for both and warnings are included.
+
+                ```json
+                {
+                    "is_valid": false,
+                    "sans": {
+                        "DNS": [
+                            "demo.nautobot.com"
+                        ],
+                        "IP Address": []
+                    },
+                    "count": 1,
+                    "contains_host": {
+                        "name": "test.example.com",
+                        "is_valid": false,
+                        "reason": "No match found for test.example.com in DNS SANs: demo.nautobot.com"
+                    },
+                    "contains_alternate": {
+                        "example.com": {
+                            "name": "example.com",
+                            "is_valid": false,
+                            "reason": "No match found for example.com in DNS SANs: demo.nautobot.com"
+                        }
+                    },
+                    "warnings": [
+                        "The hostname/IP test.example.com is not included in the SANs: No match found for test.example.com in DNS SANs: demo.nautobot.com",
+                        "The alternate name example.com is not included in the SANs: No match found for example.com in DNS SANs: demo.nautobot.com"
+                    ]
+                }
+                ```
         """
         if "subjectAltName" not in cert["cert_info"]:
             return {

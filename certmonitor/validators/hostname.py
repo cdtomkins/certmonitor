@@ -13,7 +13,7 @@ class HostnameValidator(BaseCertValidator):
 
     name = "hostname"
 
-    def validate(self, cert, host, port):
+    def validate(self, cert, host, port) -> dict:
         """
         Validates the hostname against the Subject Alternative Names (SANs) and Common Name (CN) in the provided SSL certificate.
 
@@ -27,11 +27,28 @@ class HostnameValidator(BaseCertValidator):
                   the reason for validation failure, and the alternative names (SANs) in the certificate.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a certificate where the hostname matches one of the DNS SANs, so validation passes and the matched name is shown.
+
                 {
-                  "is_valid": true,
-                  "matched_name": "example.com",
-                  "alt_names": ["example.com", "www.example.com"]
+                    "is_valid": true,
+                    "matched_name": "example.com",
+                    "alt_names": [
+                        "example.com",
+                        "www.example.com"
+                    ]
+                }
+
+            Example output (failure):
+                This example shows a certificate where the hostname does not match any DNS SAN or common name, so validation fails and a reason is provided.
+
+                {
+                    "is_valid": false,
+                    "reason": "Hostname test.example.com doesn't match any of the certificate's subject alternative names or common name",
+                    "alt_names": [
+                        "example.com",
+                        "www.example.com"
+                    ]
                 }
         """
         common_name = self._get_common_name(cert["cert_info"])

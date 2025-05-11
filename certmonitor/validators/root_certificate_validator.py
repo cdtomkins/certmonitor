@@ -13,7 +13,7 @@ class RootCertificateValidator(BaseCertValidator):
 
     name = "root_certificate"
 
-    def validate(self, cert, host, port):
+    def validate(self, cert, host, port) -> dict:
         """
         Validates if the SSL certificate is issued by a trusted root CA.
 
@@ -27,7 +27,9 @@ class RootCertificateValidator(BaseCertValidator):
                   and any warnings or reasons for validation failure.
 
         Examples:
-            Example output:
+            Example output (success):
+                This example shows a certificate that is signed by a trusted root CA, so validation passes and no warnings are present.
+
                 {
                   "is_valid": true,
                   "issuer": {
@@ -35,6 +37,23 @@ class RootCertificateValidator(BaseCertValidator):
                     "organizationName": "DigiCert Inc"
                   },
                   "warnings": []
+                }
+
+            Example output (failure):
+                This example shows a certificate that is not signed by a trusted root CA, so validation fails and warnings are included.
+
+                {
+                  "is_valid": false,
+                  "issuer": {
+                    "commonName": "Unknown",
+                    "organizationName": "Unknown"
+                  },
+                  "warnings": [
+                    "Certificate does not provide OCSP information.",
+                    "Certificate does not provide caIssuers information.",
+                    "Certificate is self-signed.",
+                    "The certificate is issued by an untrusted root CA: Unknown (Unknown)"
+                  ]
                 }
         """
         issuer = cert.get("issuer", {})
