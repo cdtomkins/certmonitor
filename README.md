@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/logo.svg" alt="CertMonitor Logo" width="120" height="120">
+</p>
+
 # CertMonitor
 
 A robust, user-friendly, and dynamic certificate monitoring and validation tool for Python.
