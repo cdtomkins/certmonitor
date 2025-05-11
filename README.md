@@ -11,7 +11,7 @@
   <strong>All orchestration and logic are pure Python standard library. Advanced public key parsing and elliptic curve support are powered by Rust. No third-party Python dependencies.</strong></em>
 </p>
 <p align="center">
-  <a href="https://github.com/bradh11/certmonitor/actions?query=workflow%3ATest" target="_blank">
+  <a href="https://github.com/bradh11/certmonitor/actions/workflows/test.yml" target="_blank">
     <img src="https://github.com/bradh11/certmonitor/actions/workflows/test.yml/badge.svg" alt="Test Status">
   </a>
   <a href="https://pypi.org/project/certmonitor" target="_blank">
@@ -51,7 +51,7 @@ with CertMonitor("example.com") as monitor:
 - 🛡️ **Certificate Validators:** Modular checks for expiration, hostname, SANs, key strength, protocol, ciphers, and more.
 - ⚡ **High Performance:** Async- and batch-friendly. Designed for speed and concurrency.
 - 🧩 **Extensible:** Add your own custom validators for organization-specific checks.
-- 🐍 **Native Python First:** Works out-of-the-box in any Python 3.7+ environment.
+- 🐍 **Native Python First:** Works out-of-the-box in any Python 3.8+ environment.
 - 🦀 **Rust-Powered Parsing:** Certificate parsing and public key extraction are handled by a Rust extension for speed, safety, and correctness. <strong>This is required for advanced public key and elliptic curve features, but all orchestration and logic are pure Python stdlib.</strong>
 - 📦 **Portable:** No system dependencies. Drop it into any project or CI pipeline.
 - 📝 **Comprehensive Docs:** [ReadTheDocs](https://certmonitor.readthedocs.io/) with usage, API, and advanced guides.

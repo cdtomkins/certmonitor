@@ -48,4 +48,4 @@ Absolutely! CertMonitor is built to be extensible. You can add your own validato
 
 ### What platforms does CertMonitor support?
 
-CertMonitor runs on any platform with Python 3.7+ and does not require any non-standard dependencies for orchestration or logic. Rust bindings are required for advanced public key and elliptic curve features, and will be distributed as pre-built wheels for all major platforms.
+CertMonitor runs on any platform with Python 3.8+ and does not require any non-standard dependencies for orchestration or logic. Rust is only needed for advanced public key and elliptic curve features. Pre-built wheels are provided for major platforms where available—see the installation instructions for details.
