@@ -34,6 +34,9 @@ jobs:
       - name: Build Rust extension
         run: |
           make maturin-build
+      - name: Install Rust extension
+        run: |
+          make maturin-develop
       - name: Run tests
         run: |
           uv run pytest --maxfail=2 --disable-warnings
