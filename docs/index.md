@@ -1,7 +1,7 @@
 # CertMonitor
 
 <p align="center">
-  <img src="/img/logo.png" alt="CertMonitor Logo" width="180" />
+  <img src="images/logo.svg" alt="CertMonitor Logo" width="180" />
 </p>
 
 ---
