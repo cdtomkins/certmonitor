@@ -5,7 +5,13 @@ from certmonitor import CertMonitor
 # Example usage
 if __name__ == "__main__":
     # Test with a hostname
-    validators = ["subject_alt_names", "expiration", "hostname", "root_certificate", "key_info"]
+    validators = [
+        "subject_alt_names",
+        "expiration",
+        "hostname",
+        "root_certificate",
+        "key_info",
+    ]
     with CertMonitor("example.com", enabled_validators=validators) as monitor:
         structured_cert = monitor.get_cert_info()
         validation_results = monitor.validate()

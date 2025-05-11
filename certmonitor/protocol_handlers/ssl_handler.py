@@ -46,8 +46,12 @@ class SSLHandler(BaseProtocolHandler):
                     context.verify_mode = ssl.CERT_NONE
                     context.options &= ~ssl.OP_NO_RENEGOTIATION
 
-                self.socket = socket.create_connection((self.host, self.port), timeout=10)
-                self.secure_socket = context.wrap_socket(self.socket, server_hostname=self.host)
+                self.socket = socket.create_connection(
+                    (self.host, self.port), timeout=10
+                )
+                self.secure_socket = context.wrap_socket(
+                    self.socket, server_hostname=self.host
+                )
                 self.tls_version = self.secure_socket.version()
                 return None
             except ssl.SSLError as e:
@@ -55,12 +59,18 @@ class SSLHandler(BaseProtocolHandler):
                     # Retry with unsafe legacy renegotiation enabled
                     try:
                         context.options &= ~ssl.OP_NO_RENEGOTIATION
-                        self.socket = socket.create_connection((self.host, self.port), timeout=10)
-                        self.secure_socket = context.wrap_socket(self.socket, server_hostname=self.host)
+                        self.socket = socket.create_connection(
+                            (self.host, self.port), timeout=10
+                        )
+                        self.secure_socket = context.wrap_socket(
+                            self.socket, server_hostname=self.host
+                        )
                         self.tls_version = self.secure_socket.version()
                         return None
                     except Exception as e:
-                        logging.error(f"Error connecting with unsafe legacy renegotiation: {e}")
+                        logging.error(
+                            f"Error connecting with unsafe legacy renegotiation: {e}"
+                        )
             except Exception:
                 if self.socket:
                     self.socket.close()
@@ -88,7 +98,9 @@ class SSLHandler(BaseProtocolHandler):
                 "pem": ssl.DER_cert_to_PEM_cert(cert),
             }
         except Exception as e:
-            return self.error_handler.handle_error("CertificateError", str(e), self.host, self.port)
+            return self.error_handler.handle_error(
+                "CertificateError", str(e), self.host, self.port
+            )
 
     def fetch_raw_cipher(self) -> Tuple[str, str, Optional[int]]:
         if not self.secure_socket:

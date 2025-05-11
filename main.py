@@ -7,7 +7,9 @@ if __name__ == "__main__":
     # Test with a hostname
     with CertMonitor("example.com") as monitor:
         cert_data = monitor.get_cert_info()
-        validation_results = monitor.validate(validator_args={"subject_alt_names": ["www.example.com"]})
+        validation_results = monitor.validate(
+            validator_args={"subject_alt_names": ["www.example.com"]}
+        )
         # public_key_info = monitor._extract_public_key_info()
         print("Hostname test:")
         print(monitor.cert_data)
@@ -24,7 +26,9 @@ if __name__ == "__main__":
     print("\n" + "=" * 50 + "\n")
 
     # Test with an IPv6 address
-    with CertMonitor("2606:2800:220:1:248:1893:25c8:1946") as monitor:  # IPv6 for example.com
+    with CertMonitor(
+        "2606:2800:220:1:248:1893:25c8:1946"
+    ) as monitor:  # IPv6 for example.com
         cert = monitor.get_cert_info()
         validation_results = monitor.validate()
         print("IPv6 test:")
@@ -34,17 +38,25 @@ if __name__ == "__main__":
 
     # Test with an hostname with very few SANS
     with CertMonitor(
-        "www.networktocode.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]
+        "www.networktocode.com",
+        enabled_validators=["hostname", "expiration", "subject_alt_names"],
     ) as monitor:
         cert = monitor.get_cert_info()
-        validation_results = monitor.validate(validator_args={"subject_alt_names": ["networktocode.com"]})
+        validation_results = monitor.validate(
+            validator_args={"subject_alt_names": ["networktocode.com"]}
+        )
         print("Hostname with few SANS:")
         print(json.dumps(cert, indent=2))
 
     # Test with an hostname with moderate SANS
-    with CertMonitor("www.cisco.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]) as monitor:
+    with CertMonitor(
+        "www.cisco.com",
+        enabled_validators=["hostname", "expiration", "subject_alt_names"],
+    ) as monitor:
         cert = monitor.get_cert_info()
-        validation_results = monitor.validate(validator_args={"subject_alt_names": ["cisco.com"]})
+        validation_results = monitor.validate(
+            validator_args={"subject_alt_names": ["cisco.com"]}
+        )
         print("Hostname with few SANS:")
         print(json.dumps(cert, indent=2))
         print("Validation Results 1:")
@@ -59,10 +71,13 @@ if __name__ == "__main__":
 
     # Test with another hosthame with no SANS
     with CertMonitor(
-        "demo.nautobot.com", enabled_validators=["hostname", "expiration", "subject_alt_names"]
+        "demo.nautobot.com",
+        enabled_validators=["hostname", "expiration", "subject_alt_names"],
     ) as monitor:
         cert = monitor.get_cert_info()
-        validation_results = monitor.validate(validator_args={"subject_alt_names": ["demo.nautobot.com"]})
+        validation_results = monitor.validate(
+            validator_args={"subject_alt_names": ["demo.nautobot.com"]}
+        )
         print("Hostname with no SANS:")
         print(json.dumps(cert, indent=2))
         print("Validation Results 1:")
