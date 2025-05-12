@@ -92,9 +92,5 @@ jobs:
         run: |
           make wheel
       - name: Publish to PyPI
-        env:
-          UV_PUBLISH_NO_TRUSTED: "1"
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           uv publish
