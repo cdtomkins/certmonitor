@@ -99,8 +99,8 @@ jobs:
           uv sync --group dev
       - name: Build the Hybrid Python Rust Package - abi3 wheels
         run: |
-          make wheel
-          ls -l dist 
+          make build
+          ls -l dist
       - name: Publish to PyPI
         run: |
           uv publish

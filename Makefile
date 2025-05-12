@@ -11,8 +11,8 @@ develop:
 wheel:
 	uv run maturin build --release --out dist
 
-# Full build
-build: develop
+# Full build (build artifacts for release)
+build: wheel
 
 # Run tests
 test:

@@ -28,7 +28,7 @@ This guide is for contributors and advanced users who want to build CertMonitor 
     ```
 4. **Build and install the Rust bindings:**
     ```sh
-    make maturin-develop
+    make develop
     ```
 
 ---
@@ -60,7 +60,7 @@ The Rust extension is built as a Python module using [PyO3](https://pyo3.rs/) an
 - Edit Python or Rust code as needed.
 - Rebuild the Rust extension if you change Rust code:
   ```sh
-  make maturin-develop
+  make develop
   ```
 - Run tests and docs as above.
 
