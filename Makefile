@@ -9,7 +9,7 @@ develop:
 
 # Build the wheel (Python + Rust)
 wheel:
-	uv run maturin build --release
+	uv run maturin build --release --out dist
 
 # Full build
 build: develop
@@ -63,4 +63,4 @@ clean:
 # Verify the contents of the built wheel
 verify-wheel:
 	@echo "🔍 Verifying wheel contents..."
-	unzip -l target/wheels/certmonitor-*.whl | grep certmonitor
+	unzip -l dist/certmonitor-*.whl | grep certmonitor
