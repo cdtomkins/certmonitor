@@ -29,6 +29,7 @@ Yes! For advanced or performance-critical cryptographic processing, CertMonitor 
 ### How does CertMonitor ensure high performance?
 
 CertMonitor is optimized for speed and concurrency:
+
 - All network and certificate operations are designed to be fast and non-blocking.
 - The API supports asynchronous and parallel workflows (see the Performance Tips section for examples).
 - For large-scale or batch monitoring, CertMonitor can be run in highly concurrent environments with minimal overhead.
@@ -37,6 +38,7 @@ CertMonitor is optimized for speed and concurrency:
 ### Is CertMonitor secure?
 
 Security is a top priority. CertMonitor:
+
 - Avoids third-party cryptography libraries unless absolutely necessary.
 - Uses secure defaults for all network and certificate operations.
 - Is designed to be auditable, with a small, readable codebase.
