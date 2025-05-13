@@ -8,7 +8,7 @@
 
 <p align="center">
   <em>Zero-dependency certificate monitoring and validation for Python. Native, portable, extensible, and secure.<br>
-  <strong>All orchestration and logic are pure Python standard library. Advanced public key parsing and elliptic curve support are powered by Rust. No third-party Python dependencies.</strong></em>
+  All orchestration and logic are pure Python standard library. Public key parsing and elliptic curve support are powered by Rust. No third-party Python dependencies - ever.</em>
 </p>
 <p align="center">
   <a href="https://github.com/bradh11/certmonitor/actions/workflows/ci.yml?query=branch%3Amain" target="_blank">

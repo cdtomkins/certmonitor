@@ -1,12 +1,19 @@
-# CertMonitor
-
 <p align="center">
   <img src="images/logo.svg" alt="CertMonitor Logo" width="180" />
 </p>
 
+# CertMonitor
+
+<p align="center">
+  <em>Zero-dependency certificate monitoring and validation for Python. Native, portable, extensible, and secure.<br>
+  All orchestration and logic are pure Python standard library. Public key parsing and elliptic curve support are powered by Rust. No third-party Python dependencies - ever.</em>
+</p>
+
 ---
 
-**CertMonitor** is a modern, robust, and extensible Python library for programmatically retrieving, validating, and monitoring SSL/TLS certificates and connection security for any host or service.
+> ⚡️ **Why CertMonitor?**
+>
+> CertMonitor was born out of real-world frustration: outages and security incidents caused by expired certificates, missing Subject Alternative Names, or incomplete certificate chains. This tool is a labor of love—built to solve those pain points with a zero-dependency, native Python approach. All orchestration and logic are pure Python stdlib, with public key parsing and elliptic curve support powered by Rust for speed, safety, and correctness. CertMonitor is always improving, and your feedback is welcome!
 
 ---
 
@@ -22,25 +29,46 @@
 
 ---
 
-## 📦 Quickstart
+## 📦 Installation & Quickstart
 
-```bash
-pip install certmonitor
-```
+You can install CertMonitor using your preferred Python package manager.
+
+=== "pip"
+    ```sh
+    pip install certmonitor
+    ```
+
+=== "uv"
+    ```sh
+    uv pip install certmonitor
+    ```
+
+Once installed, you can quickly get started:
 
 ```python
 from certmonitor import CertMonitor
 
+# Using the context manager (recommended)
 with CertMonitor("example.com") as monitor:
     cert_info = monitor.get_cert_info()
-    print(cert_info)
-    pem = monitor.get_raw_pem()
-    print(pem)
-    der = monitor.get_raw_der()
-    print(der)
-    results = monitor.validate({"subject_alt_names": ["example.com", "www.example.com"]})
-    print(results["expiration"])
-    print(results["subject_alt_names"])
+    print("Certificate Info:", cert_info)
+
+    # Validate with specific arguments for a validator
+    results = monitor.validate(
+        validator_args={"subject_alt_names": ["example.com", "www.example.com"]}
+    )
+    print("\nValidation Results:")
+    for validator_name, result in results.items():
+        print(f"  {validator_name}: {'Valid' if result['is_valid'] else 'Invalid'} - {result.get('reason', result.get('days_to_expiry', ''))}")
+
+    # Retrieve raw certificate data if needed
+    pem_cert = monitor.get_raw_pem()
+    # print("\nRaw PEM Certificate:\n", pem_cert)
+
+    der_cert = monitor.get_raw_der()
+    # print("\nRaw DER Certificate (first 50 bytes):\n", der_cert[:50])
+
+# For more detailed examples, check the Usage section.
 ```
 
 ---
@@ -140,23 +168,6 @@ This makes CertMonitor ideal for continuous monitoring, compliance automation, a
 - [GitHub Repository](https://github.com/bradh11/certmonitor)
 - [PyPI Package](https://pypi.org/project/certmonitor/)
 - [ReadTheDocs](https://certmonitor.readthedocs.io/)
-
----
-
-## 💡 Why CertMonitor?
-
-- **Production-Ready**: Used in real-world automation, monitoring, and compliance workflows.
-- **Extensible**: Add your own validators or integrate with your stack.
-- **Transparent**: Open source, well-tested, and actively maintained.
-
----
-
-## 📝 Get Started
-
-- [Installation & Usage](usage/installation.md)
-- [Validator Reference](validators/index.md)
-- [API Reference](reference/certmonitor.md)
-- [Development Guide](development.md)
 
 ---
 
