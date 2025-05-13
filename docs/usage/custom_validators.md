@@ -5,6 +5,7 @@ CertMonitor is designed to be extensible. You can add your own validators to che
 ## Why Use a Custom Validator?
 
 Some use cases for custom validators include:
+
 - Enforcing organization-specific policies (e.g., only allow certain CAs or key types)
 - Checking for custom certificate extensions or metadata
 - Integrating with external compliance or inventory systems

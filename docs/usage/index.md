@@ -5,6 +5,7 @@
 CertMonitor was born out of real-world frustration: outages and security incidents caused by expired certificates, missing Subject Alternative Names, or incomplete certificate chains. Like many engineers, I was tired of late-night alerts, broken integrations, and the endless scramble to track down certificate issues before they caused downtime or compliance failures.
 
 I created CertMonitor to solve these pain points with a tool that is:
+
 - **Zero-dependency:** 100% native Python. No third-party Python packages required—ever. Advanced public key parsing and elliptic curve support are powered by Rust for speed and safety.
 - **Portable and secure:** Works out-of-the-box in any Python 3.8+ environment, with a minimal attack surface.
 - **Extensible:** Add your own validators for organization-specific checks, compliance, or custom certificate logic.
