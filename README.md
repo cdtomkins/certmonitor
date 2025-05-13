@@ -154,16 +154,19 @@ You can enable, disable, or extend validators to fit your needs, making CertMoni
 
 ## 📦 Installation
 
-If published to PyPI:
+Install CertMonitor from PyPI using your preferred package manager:
+
+**Using pip:**
 ```sh
 pip install certmonitor
 ```
-If not published, clone this repository and install locally:
+
+**Using uv:**
 ```sh
-git clone <repo-url>
-cd certmonitor
-pip install .
+uv pip install certmonitor
 ```
+
+For instructions on installing from source for development, please see the [Development Guide](docs/development.md).
 
 ---
 
