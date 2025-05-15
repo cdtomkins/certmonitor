@@ -40,7 +40,7 @@ You can install CertMonitor using your preferred Python package manager.
 
 === "uv"
     ```sh
-    uv pip install certmonitor
+    uv add certmonitor
     ```
 
 Once installed, you can quickly get started:

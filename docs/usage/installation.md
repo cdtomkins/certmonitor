@@ -9,7 +9,7 @@ You can install CertMonitor using your preferred Python package manager. Below a
 
 === "uv"
     ```sh
-    uv pip install certmonitor
+    uv add certmonitor
     ```
 
 ---
