@@ -163,7 +163,7 @@ pip install certmonitor
 
 **Using uv:**
 ```sh
-uv pip install certmonitor
+uv add certmonitor
 ```
 
 For instructions on installing from source for development, please see the [Development Guide](docs/development.md).
