@@ -103,6 +103,11 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Coverage artifacts
+coverage.json
+coverage.xml
+htmlcov/
+
 # Translations
 *.mo
 *.pot
@@ -274,3 +279,5 @@ test.py
 # Reference files that should not be included in the final package
 crypto_openssl_test.py
 crypto_standard_lib.py
+test_cert_data_keys.py
+test_public_key.py
