@@ -25,9 +25,13 @@
 - **Formatting compliant:** ✅ Yes
 
 ### Security & Dependencies
-- **Security scanning:** ✅ Enabled
-- **Vulnerabilities found:** 0
-- **Security status:** 🔒 Clean
+- **Rust security scanning:** ✅ Enabled
+- **Rust vulnerabilities found:** 0
+- **Python security scanning:** ✅ Enabled
+- **Python security issues found:** 0
+- **Files scanned by bandit:** 19
+- **Lines scanned by bandit:** 1,634
+- **Overall security status:** 🔒 Clean
 - **PyO3 version:** 0.24.1
 
 ### Development Workflow
@@ -63,7 +67,7 @@
 - **core.py**: ✅ (632 lines)
 - **error_handlers.py**: ✅ (29 lines)
 - **cipher_algorithms.py**: ✅ (145 lines)
-- **protocol_handlers/ssl_handler.py**: ✅ (191 lines)
+- **protocol_handlers/ssl_handler.py**: ✅ (193 lines)
 - **protocol_handlers/ssh_handler.py**: ✅ (77 lines)
 - **protocol_handlers/base.py**: ✅ (28 lines)
 - **utils/utils.py**: ❌ (1 lines)
