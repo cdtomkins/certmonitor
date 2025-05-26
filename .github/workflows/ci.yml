@@ -1,73 +1,287 @@
-name: CI
+# Main CI/CD Pipeline - Efficient testing and quality checks
+name: CI/CD
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]  # Only comprehensive tests on main branches
   pull_request:
-    branches: [main, master]
+    branches: [main, develop]  # Comprehensive tests on PRs to main branches
   release:
     types: [published]
+  schedule:
+    # Run security scans weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+
+# Prevent duplicate runs for PR pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  # Fast quality checks - runs on all triggers
+  quick-checks:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+    
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v1
-        with:
-          version: "0.6.17"
-      - name: Install dependencies
-        run: |
-          uv sync --group dev
-      - name: Check formatting
-        run: |
-          uv run ruff format --check .
-      - name: Lint
-        run: |
-          uv run ruff check .
-      - name: Install Rust extension
-        run: |
-          make develop
-      - name: Run tests
-        run: |
-          uv run pytest --maxfail=2 --disable-warnings
-
-  docs:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          
       - name: Set up uv
         uses: astral-sh/setup-uv@v1
         with:
           version: "0.6.17"
-      - name: Create venv
-        run: |
-          uv venv .venv
-      - name: Set up venv PATH
-        run: |
-          echo ".venv/bin" >> $GITHUB_PATH
+          
       - name: Install dependencies
+        run: uv sync --group dev
+        
+      - name: Check formatting
+        run: uv run ruff format --check .
+        
+      - name: Lint with ruff
+        run: uv run ruff check .
+        
+      - name: Install Rust extension
+        run: make develop
+        
+      - name: Run quick tests (core functionality)
         run: |
-          uv sync --group docs
+          uv run pytest tests/test_core/test_initialization.py --maxfail=2 --disable-warnings
+
+  # Comprehensive test suite - runs on PRs and main branch pushes
+  test:
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    # Only run comprehensive tests on PRs and main/develop pushes
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]  # Full Python matrix
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "0.6.17"
+          
+      - name: Install dependencies
+        run: uv sync --group dev
+        
+      - name: Install Rust extension
+        run: make develop
+        
+      - name: Run full test suite with coverage
+        run: |
+          uv run pytest --maxfail=2 --disable-warnings \
+            --cov=certmonitor --cov-report=xml --cov-report=html
+            
+      - name: Upload coverage (Python 3.11 only)
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: certmonitor-coverage
+      
+      - name: Build verification (Python 3.11 only)
+        if: matrix.python-version == '3.11'
+        run: |
+          echo "🏗️ Verifying build..."
+          make wheel
+          echo "✅ Build verification complete"
+
+  # Type checking and code quality - only on PRs and main branches
+  quality:
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "0.6.17"
+          
+      - name: Install dependencies
+        run: uv sync --group dev
+        
+      - name: Install Rust extension
+        run: make develop
+        
+      - name: Run type checking with mypy
+        run: |
+          uv run pip install mypy types-requests
+          uv run mypy certmonitor/ --ignore-missing-imports --show-error-codes
+          
+      - name: Check code complexity
+        run: |
+          uv run pip install radon
+          uv run radon cc certmonitor/ --min B
+          uv run radon mi certmonitor/ --min B
+
+  # Rust-specific checks - smart triggering
+  rust:
+    runs-on: ${{ matrix.os }}
+    needs: quick-checks
+    strategy:
+      matrix:
+        os: [ubuntu-latest]  # Only Linux for regular checks
+        rust: [stable]
+        include:
+          # Cross-platform only on PRs and releases
+          - os: macos-latest
+            rust: stable
+            if: github.event_name == 'pull_request' || github.event_name == 'release'
+          - os: windows-latest
+            rust: stable  
+            if: github.event_name == 'pull_request' || github.event_name == 'release'
+        
+    # Run if Rust files changed OR it's a PR/main branch push
+    if: |
+      github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop' ||
+      contains(github.event.head_commit.modified, 'rust_certinfo/') ||
+      contains(github.event.head_commit.modified, 'Cargo.toml') ||
+      contains(github.event.head_commit.modified, 'Cargo.lock')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+          
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "rust_certinfo -> target"
+          
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+        
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+        
+      - name: Run Rust tests
+        run: cargo test --verbose
+        
+      - name: Check security advisories
+        if: matrix.rust == 'stable' && matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-audit
+          cargo audit
+
+  # Security scanning (weekly + on security-related changes)
+  security:
+    runs-on: ubuntu-latest
+    # Run on develop/main pushes, PRs, and weekly schedule
+    if: |
+      github.event_name == 'schedule' ||
+      github.ref == 'refs/heads/develop' ||
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'pull_request'
+      
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "0.6.17"
+          
+      - name: Install dependencies
+        run: uv sync --group dev
+        
+
+      - name: Run bandit security linter
+        run: |
+          uv run pip install bandit
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Fail on PRs to catch issues early (using bandit config for exceptions)
+            uv run bandit -r certmonitor/ -f json -o bandit-report.json -c .bandit
+          else
+            # Allow on main/develop since PR was already tested
+            uv run bandit -r certmonitor/ -f json -o bandit-report.json -c .bandit || true
+          fi
+      
+      - name: Review security findings
+        run: |
+          echo "🔍 Python security scan completed with bandit."
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "⚠️  PR Security Check: Any blocking findings must be addressed or documented."
+            echo "📋 Add exceptions to .bandit configuration if findings are intentional for this security tool."
+          else
+            echo "⚠️  Note: Some findings may be intentional for this security assessment tool."
+            echo "📋 Review .bandit configuration for documented exceptions."
+          fi
+
+  # Documentation build - runs on PR merges and before releases
+  docs:
+    runs-on: ubuntu-latest
+    # Only run on main/develop pushes (PR merges) and releases
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')) ||
+      github.event_name == 'release'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "0.6.17"
+          
+      - name: Install dependencies
+        run: uv sync --group docs
+        
       - name: Build docs
         run: |
           uv run mkdocs build --strict
 
   publish:
     if: github.event_name == 'release' && github.event.action == 'published'
-    needs: [test, docs]
+    needs: [test, quality, rust, security, docs]
     # build one wheel per OS
     runs-on: ${{ matrix.os }}
     strategy:

@@ -1,4 +1,5 @@
 # validators/__init__.py
+from typing import Any
 
 from .expiration import ExpirationValidator
 from .hostname import HostnameValidator
@@ -7,6 +8,7 @@ from .root_certificate_validator import RootCertificateValidator
 from .subject_alt_names import SubjectAltNamesValidator
 from .tls_version import TLSVersionValidator
 from .weak_cipher import WeakCipherValidator
+
 # ... Import other validators as needed
 
 
@@ -23,7 +25,7 @@ VALIDATORS = {
 }
 
 
-def register_validator(validator_instance):
+def register_validator(validator_instance: Any) -> None:
     """
     Register a custom validator instance with the system.
 

@@ -6,13 +6,12 @@ import os
 import socket
 import ssl
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union, cast, Tuple
 
-from certmonitor import certinfo
-
-from certmonitor import config
+from certmonitor import certinfo, config
 from certmonitor.cipher_algorithms import parse_cipher_suite
 from certmonitor.error_handlers import ErrorHandler
+from certmonitor.protocol_handlers.base import BaseProtocolHandler
 from certmonitor.protocol_handlers.ssh_handler import SSHHandler
 from certmonitor.protocol_handlers.ssl_handler import SSLHandler
 from certmonitor.validators import VALIDATORS
@@ -25,7 +24,7 @@ class CertMonitor:
         self,
         host: str,
         port: int = 443,
-        enabled_validators: list = config.DEFAULT_VALIDATORS,
+        enabled_validators: Optional[List[str]] = None,
     ):
         """Initialize the CertMonitor with the specified host and port."""
         self.host = host
@@ -34,19 +33,22 @@ class CertMonitor:
         self.der = None
         self.pem = None
         self.cert_info = None
+        self.cert_data: Dict[str, Any] = {}
+        self.public_key_der = None
+        self.public_key_pem = None
         self.validators = VALIDATORS
         self.enabled_validators = enabled_validators or config.ENABLED_VALIDATORS
         self.error_handler = ErrorHandler()
-        self.handler = None
-        self.protocol = None
+        self.handler: Optional[BaseProtocolHandler] = None
+        self.protocol: Optional[str] = None
         self.connected = False
 
-    def __enter__(self):
+    def __enter__(self) -> "CertMonitor":
         """Enter the runtime context related to this object."""
         self.connect()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
         """Exit the runtime context related to this object."""
         self.close()
 
@@ -56,20 +58,26 @@ class CertMonitor:
             logging.debug("Already connected, skipping connection attempt")
             return None
 
-        self.protocol = self.detect_protocol()
-        if isinstance(self.protocol, dict) and "error" in self.protocol:
-            return self.protocol
+        protocol_result = self.detect_protocol()
+        if isinstance(protocol_result, dict) and "error" in protocol_result:
+            return protocol_result
+
+        # If we get here, protocol_result is a string
+        self.protocol = cast(str, protocol_result)
 
         if self.protocol == "ssl":
             self.handler = SSLHandler(self.host, self.port, self.error_handler)
         elif self.protocol == "ssh":
             self.handler = SSHHandler(self.host, self.port, self.error_handler)
         else:
-            return self.error_handler.handle_error(
-                "ProtocolError",
-                f"Unsupported protocol: {self.protocol}",
-                self.host,
-                self.port,
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ProtocolError",
+                    f"Unsupported protocol: {self.protocol}",
+                    self.host,
+                    self.port,
+                ),
             )
 
         connection_result = self.handler.connect()
@@ -80,13 +88,13 @@ class CertMonitor:
         logging.debug(f"Successfully connected to {self.host}:{self.port}")
         return None
 
-    def close(self):
+    def close(self) -> None:
         """Close the connection and reset the handler."""
         if self.handler:
             self.handler.close()
         self.handler = None
 
-    def detect_protocol(self):
+    def detect_protocol(self) -> Union[str, Dict[str, Any]]:
         """Detect the protocol used by the host."""
         try:
             with socket.create_connection((self.host, self.port), timeout=10) as sock:
@@ -98,11 +106,14 @@ class CertMonitor:
                     elif data[0] in [22, 128, 160]:  # Common first bytes for SSL/TLS
                         return "ssl"
                     else:
-                        return self.error_handler.handle_error(
-                            "ProtocolDetectionError",
-                            f"Unable to determine protocol. First bytes: {data.hex()}",
-                            self.host,
-                            self.port,
+                        return cast(
+                            Dict[str, Any],
+                            self.error_handler.handle_error(
+                                "ProtocolDetectionError",
+                                f"Unable to determine protocol. First bytes: {data.hex()}",
+                                self.host,
+                                self.port,
+                            ),
                         )
                 except socket.error:
                     # If no data is received, assume it's SSL
@@ -110,29 +121,42 @@ class CertMonitor:
                 finally:
                     sock.setblocking(True)
         except Exception as e:
-            return self.error_handler.handle_error(
-                "ConnectionError", str(e), self.host, self.port
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ConnectionError", str(e), self.host, self.port
+                ),
             )
 
-    def _ensure_connection(self):
+    def _ensure_connection(self) -> Optional[Dict[str, Any]]:
         """Ensures that a valid connection is established."""
         if not self.connected:
             connect_result = self.connect()
             if connect_result is not None:  # This means there was an error
-                raise ConnectionError(
-                    f"Failed to establish connection: {connect_result}"
-                )
+                return connect_result
         else:
             try:
-                self.handler.check_connection()
+                if self.handler is None:
+                    # Handler is None, need to reconnect
+                    self.connected = False
+                    connect_result = self.connect()
+                    if connect_result is not None:
+                        return connect_result
+                else:
+                    # Handler exists, check if connection is still valid
+                    # Use hasattr to check if check_connection method exists
+                    if hasattr(self.handler, "check_connection"):
+                        # Call check_connection and let any exceptions bubble up
+                        cast(Any, self.handler).check_connection()
+                    # If no exception was raised, connection is still valid
             except ConnectionError:
                 logging.warning("Connection lost, attempting to reconnect")
                 self.connected = False
                 connect_result = self.connect()
                 if connect_result is not None:  # This means there was an error
-                    raise ConnectionError(
-                        f"Failed to re-establish connection: {connect_result}"
-                    )
+                    return connect_result
+
+        return None  # No error, connection is established
 
     def _is_ip_address(self, host: str) -> bool:
         """Check if the provided host is an IP address."""
@@ -144,54 +168,121 @@ class CertMonitor:
 
     def _fetch_raw_cert(self) -> Dict[str, Any]:
         """Fetches the raw certificate from the connected host."""
-        self._ensure_connection()
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
+
+        if self.handler is None:
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ConnectionError",
+                    "Handler is not initialized",
+                    self.host,
+                    self.port,
+                ),
+            )
+
         cert_data = self.handler.fetch_raw_cert()
 
         if isinstance(cert_data, dict) and "error" in cert_data:
             return cert_data
 
         cert_info = cert_data["cert_info"]
-        self.der = cert_data["der"]
-        self.pem = cert_data["pem"]
-        self.public_key_info = {}
+        self.der = cert_data.get("der")  # Use .get() to allow None
+        self.pem = cert_data.get("pem")  # Use .get() to allow None
 
         if not cert_info:
             # If getpeercert() returns an empty dict, we'll parse the cert ourselves
-            cert_data["cert_info"] = self._parse_pem_cert(self.pem)
+            if self.pem is not None:
+                cert_data["cert_info"] = self._parse_pem_cert(self.pem)
+            else:
+                cert_data["cert_info"] = {}
 
         if self.der:
             try:
                 # parse_public_key_info expects DER bytes and returns e.g.
                 # {"algorithm": "rsaEncryption", "size": 2048, "curve": None}
-                pubkey = certinfo.parse_public_key_info(self.der)
+                pubkey = certinfo.parse_public_key_info(self.der)  # type: ignore[attr-defined]
                 cert_data["public_key_info"] = pubkey
                 self.public_key_info = pubkey
+
+                # Extract public key in DER and PEM formats
+                self.public_key_der = certinfo.extract_public_key_der(self.der)  # type: ignore[attr-defined]
+                self.public_key_pem = certinfo.extract_public_key_pem(self.der)  # type: ignore[attr-defined]
+
+                # Add public keys to cert_data
+                cert_data["public_key_der"] = self.public_key_der
+                cert_data["public_key_pem"] = self.public_key_pem
+
             except Exception as e:
                 logging.error(f"Unable to parse public key info: {e}")
                 # If you want, store a partial or error object here instead
                 cert_data["public_key_info"] = {
                     "error": f"Failed to parse public key info: {e}"
                 }
+                self.public_key_der = None
+                self.public_key_pem = None
+                cert_data["public_key_der"] = None
+                cert_data["public_key_pem"] = None
         else:
             # If there's no DER, we can't parse the public key
             cert_data["public_key_info"] = {"error": "DER bytes not available"}
+            self.public_key_der = None
+            self.public_key_pem = None
+            cert_data["public_key_der"] = None
+            cert_data["public_key_pem"] = None
 
         self.cert_data = cert_data
         return cert_data
 
-    def _fetch_raw_cipher(self) -> tuple:
+    def _fetch_raw_cipher(self) -> Union[Tuple[str, str, int], Dict[str, Any]]:
         """Fetch the raw cipher information."""
-        self._ensure_connection()
-        if self.protocol != "ssl":
-            return self.error_handler.handle_error(
-                "ProtocolError",
-                "Cipher information is only available for SSL/TLS connections",
-                self.host,
-                self.port,
-            )
-        return self.handler.fetch_raw_cipher()
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
 
-    def _parse_pem_cert(self, pem_cert: str) -> dict:
+        if self.protocol != "ssl":
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ProtocolError",
+                    "Cipher information is only available for SSL/TLS connections",
+                    self.host,
+                    self.port,
+                ),
+            )
+
+        if self.handler is None:
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ConnectionError",
+                    "Handler is not initialized",
+                    self.host,
+                    self.port,
+                ),
+            )
+
+        # fetch_raw_cipher is only available on SSL handlers
+        if hasattr(self.handler, "fetch_raw_cipher"):
+            # We know the handler has fetch_raw_cipher, so we can use Any to bypass type checking
+            return cast(
+                Union[Tuple[str, str, int], Dict[str, Any]],
+                cast(Any, self.handler).fetch_raw_cipher(),
+            )
+        else:
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ProtocolError",
+                    "fetch_raw_cipher not available for this handler type",
+                    self.host,
+                    self.port,
+                ),
+            )
+
+    def _parse_pem_cert(self, pem_cert: str) -> Dict[str, Any]:
         """Parse a PEM formatted certificate to extract relevant details."""
         with tempfile.NamedTemporaryFile(delete=False, mode="w") as temp_file:
             temp_file.write(pem_cert)
@@ -199,13 +290,20 @@ class CertMonitor:
             temp_file_path = temp_file.name
 
         try:
-            cert_details = ssl._ssl._test_decode_cert(temp_file_path)
+            # Use ssl module's private API with proper error handling
+            # This may not be available in all Python versions
+            try:
+                cert_details = ssl._ssl._test_decode_cert(temp_file_path)  # type: ignore[attr-defined]
+            except AttributeError:
+                # Fallback: return empty dict if private API is not available
+                cert_details = {}
         finally:
             os.remove(temp_file_path)
 
-        return cert_details
+        # Ensure we return a Dict[str, Any]
+        return cast(Dict[str, Any], cert_details)
 
-    def _to_structured_dict(self, data) -> dict:
+    def _to_structured_dict(self, data: Any) -> Any:
         """Convert the certificate data into a structured dictionary format.
 
         Args:
@@ -215,15 +313,17 @@ class CertMonitor:
             dict: A dictionary containing the structured certificate data.
         """
 
-        def _handle_duplicate_keys(data):
-            result = {}
-            for key, value in data:
-                if key in result:
-                    if not isinstance(result[key], list):
-                        result[key] = [result[key]]
-                    result[key].append(self._to_structured_dict(value))
-                else:
-                    result[key] = self._to_structured_dict(value)
+        def _handle_duplicate_keys(data: Any) -> Dict[str, Any]:
+            result: Dict[str, Any] = {}
+            for item in data:
+                if isinstance(item, tuple) and len(item) == 2:
+                    key, value = item
+                    if key in result:
+                        if not isinstance(result[key], list):
+                            result[key] = [result[key]]
+                        result[key].append(self._to_structured_dict(value))
+                    else:
+                        result[key] = self._to_structured_dict(value)
             return result
 
         if isinstance(data, (tuple, list)):
@@ -247,63 +347,154 @@ class CertMonitor:
         """Retrieves and structures the certificate details."""
         if not self.cert_info:
             try:
-                self._ensure_connection()
-                cert = self._fetch_raw_cert()
+                connection_result = self._ensure_connection()
+                if connection_result is not None:  # Connection failed
+                    return connection_result
 
-                if isinstance(cert, dict) and "error" in cert:
-                    logging.error(f"Error in fetching raw certificate: {cert}")
-                    return cert
+                cert_data = self._fetch_raw_cert()
 
-                self.cert_data["cert_info"] = self._to_structured_dict(
-                    cert["cert_info"]
-                )
-                self.cert_info = self.cert_data["cert_info"]
+                if isinstance(cert_data, dict) and "error" in cert_data:
+                    logging.error(f"Error in fetching raw certificate: {cert_data}")
+                    return cert_data
+
+                # The _fetch_raw_cert already sets self.cert_data, self.public_key_der, self.public_key_pem
+                # We just need to structure the cert_info part
+                self.cert_info = self._to_structured_dict(cert_data["cert_info"])
+                # Update the cert_data with the structured version
+                if not hasattr(self, "cert_data") or not self.cert_data:
+                    self.cert_data = {}
+                self.cert_data["cert_info"] = self.cert_info
                 logging.debug("Certificate info retrieved and structured")
             except Exception as e:
-                logging.exception("Error while getting certificate info")
-                return self.error_handler.handle_error(
-                    "UnknownError", str(e), self.host, self.port
+                logging.error(f"Error while getting certificate info: {e}")
+                return cast(
+                    Dict[str, Any],
+                    self.error_handler.handle_error(
+                        "UnknownError", str(e), self.host, self.port
+                    ),
                 )
 
-        return self.cert_info
+        return self.cert_info if self.cert_info is not None else {}
 
-    def get_raw_der(self) -> bytes:
+    def get_raw_der(self) -> Union[bytes, Dict[str, Any]]:
         """Return the raw DER format of the certificate."""
         if self.protocol != "ssl":
-            return self.error_handler.handle_error(
-                "ProtocolError",
-                "DER format is only available for SSL/TLS connections",
-                self.host,
-                self.port,
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ProtocolError",
+                    "DER format is only available for SSL/TLS connections",
+                    self.host,
+                    self.port,
+                ),
             )
 
-        self._ensure_connection()
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
 
         if self.der is None:
+            if self.handler is None:
+                return cast(
+                    Dict[str, Any],
+                    self.error_handler.handle_error(
+                        "ConnectionError",
+                        "Handler is not initialized",
+                        self.host,
+                        self.port,
+                    ),
+                )
+
             cert_data = self.handler.fetch_raw_cert()
+            if isinstance(cert_data, dict) and "error" in cert_data:
+                return cert_data
             self.der = cert_data.get("der")
 
-        return self.der
+        # Return the DER or empty bytes if None
+        return self.der if self.der is not None else b""
 
-    def get_raw_pem(self) -> str:
+    def get_raw_pem(self) -> Union[str, Dict[str, Any]]:
         """Return the raw PEM format of the certificate."""
+        if self.protocol != "ssl":
+            return cast(
+                Dict[str, Any],
+                self.error_handler.handle_error(
+                    "ProtocolError",
+                    "PEM format is only available for SSL/TLS connections",
+                    self.host,
+                    self.port,
+                ),
+            )
+
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
+
+        if self.pem is None:
+            if self.handler is None:
+                return cast(
+                    Dict[str, Any],
+                    self.error_handler.handle_error(
+                        "ConnectionError",
+                        "Handler is not initialized",
+                        self.host,
+                        self.port,
+                    ),
+                )
+
+            cert_data = self.handler.fetch_raw_cert()
+            if isinstance(cert_data, dict) and "error" in cert_data:
+                return cert_data
+            self.pem = cert_data.get("pem")
+
+        # Return the PEM or empty string if None
+        return self.pem if self.pem is not None else ""
+
+    def get_public_key_der(self) -> Union[bytes, Dict[str, Any], None]:
+        """Return the public key in DER format."""
         if self.protocol != "ssl":
             return self.error_handler.handle_error(
                 "ProtocolError",
-                "PEM format is only available for SSL/TLS connections",
+                "Public key extraction is only available for SSL/TLS connections",
                 self.host,
                 self.port,
             )
 
-        self._ensure_connection()
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
 
-        if self.pem is None:
-            cert_data = self.handler.fetch_raw_cert()
-            self.pem = cert_data.get("pem")
+        if self.public_key_der is None:
+            # Trigger certificate fetching which will also extract public keys
+            cert_data = self._fetch_raw_cert()
+            if isinstance(cert_data, dict) and "error" in cert_data:
+                return cert_data
 
-        return self.pem
+        return self.public_key_der
 
-    def get_cipher_info(self) -> dict:
+    def get_public_key_pem(self) -> Union[str, Dict[str, Any], None]:
+        """Return the public key in PEM format."""
+        if self.protocol != "ssl":
+            return self.error_handler.handle_error(
+                "ProtocolError",
+                "Public key extraction is only available for SSL/TLS connections",
+                self.host,
+                self.port,
+            )
+
+        connection_result = self._ensure_connection()
+        if connection_result is not None:  # Connection failed
+            return connection_result
+
+        if self.public_key_pem is None:
+            # Trigger certificate fetching which will also extract public keys
+            cert_data = self._fetch_raw_cert()
+            if isinstance(cert_data, dict) and "error" in cert_data:
+                return cert_data
+
+        return self.public_key_pem
+
+    def get_cipher_info(self) -> Dict[str, Any]:
         """Retrieve and structure the cipher information of the SSL/TLS connection."""
         raw_cipher = self._fetch_raw_cipher()
 
@@ -318,9 +509,9 @@ class CertMonitor:
             )
 
         cipher_suite, protocol_version, key_bit_length = raw_cipher
-        parsed_cipher = parse_cipher_suite(cipher_suite)
+        parsed_cipher: Dict[str, str] = parse_cipher_suite(cipher_suite)
 
-        result = {
+        result: Dict[str, Any] = {
             "cipher_suite": {
                 "name": cipher_suite,
                 "encryption_algorithm": parsed_cipher["encryption"],
@@ -341,7 +532,9 @@ class CertMonitor:
 
         return result
 
-    def validate(self, validator_args=None) -> dict:
+    def validate(
+        self, validator_args: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """
         Validates the target host by running all enabled validators.
 
